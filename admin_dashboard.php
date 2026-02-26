@@ -53,7 +53,7 @@ try {
     $totalUsers = $testStmt->fetch(PDO::FETCH_ASSOC)['total'];
     error_log("Total users in database: " . $totalUsers);
     
-    $query = "SELECT id, username, name, role, is_active, created_at 
+    $query = "SELECT id, username, name, role, phone, email, is_active, created_at 
               FROM users 
               WHERE role != 'admin'
               ORDER BY name";
@@ -72,10 +72,10 @@ try {
             'username' => $row['username'],
             'name' => $row['name'],
             'role' => $row['role'],
-            'phone' => '', // Phone column doesn't exist in database
-            'email' => '', // Email column doesn't exist in database
-            'is_active' => (bool) $row['is_active'],
-            'status' => $row['is_active'] ? 'Active' : 'Inactive',
+            'phone' => $row['phone'] ?? '', 
+            'email' => $row['email'] ?? '', 
+            'is_active' => (int) $row['is_active'],
+            'status' => (int)$row['is_active'] === 1 ? 'Active' : 'Inactive',
             'created_at' => $row['created_at']
         ];
     }
@@ -206,6 +206,7 @@ if ($_POST) {
         .fa-print::before { content: "🖨️"; }
         .fa-camera::before { content: "📷"; }
     </style>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="components/js/translations.js?v=<?php echo time(); ?>"></script>
     <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
 </head>
@@ -240,10 +241,9 @@ if ($_POST) {
         <button class="nav-tab" onclick="console.log('Inventory tab clicked'); showTab('inventory')" data-translate="navigation.inventory">📋 Inventory</button>
         <button class="nav-tab" onclick="console.log('Sales tab clicked'); showTab('sales')" data-translate="navigation.sales">💰 Sales</button>
         <button class="nav-tab" onclick="console.log('Customers tab clicked'); showTab('customers')" data-translate="navigation.customers">👥 CUSTOMERS</button>
-        <button class="nav-tab" onclick="console.log('Reports tab clicked'); showTab('reports')" data-translate="navigation.reports">📊 Reports</button>
         <button class="nav-tab" onclick="console.log('Staff tab clicked'); showTab('staff')" data-translate="navigation.staff">👥 Staff</button>
-        <button class="nav-tab" onclick="console.log('Income tab clicked'); showTab('income')" data-translate="navigation.income">💰 Income</button>
-        <button class="nav-tab" onclick="console.log('Payment tab clicked'); showTab('payment')" data-translate="navigation.payment">💸 Payment</button>
+        <button class="nav-tab" onclick="console.log('Financial tab clicked'); showTab('financial'); loadIncome(); loadPayment();" data-translate="navigation.financial">💰 Financial</button>
+        <button class="nav-tab" onclick="console.log('Reports tab clicked'); showTab('reports')" data-translate="navigation.reports">📊 Reports</button>
     </div>
 
     <div class="content">
@@ -269,13 +269,11 @@ if ($_POST) {
 
         <?php include 'views/admin/customers_tab.php'; ?>
 
-        <?php include 'views/admin/reports_tab.php'; ?>
-
         <?php include 'views/admin/staff_tab.php'; ?>
 
-        <?php include 'views/admin/income_tab.php'; ?>
+        <?php include 'views/admin/financial_tab.php'; ?>
 
-        <?php include 'views/admin/payment_tab.php'; ?>
+        <?php include 'views/admin/reports_tab.php'; ?>
     </div>
 
     <!-- Edit User Modal -->
@@ -996,15 +994,19 @@ if ($_POST) {
 
             // Add search functionality
             const searchInput = document.getElementById('inventory-search');
-            searchInput.addEventListener('input', function () {
-                filterInventory(this.value);
-            });
+            if (searchInput) {
+                searchInput.addEventListener('input', function () {
+                    filterInventory(this.value);
+                });
+            }
 
             // Add staff search functionality
             const staffSearchInput = document.getElementById('staff-search');
-            staffSearchInput.addEventListener('input', function () {
-                filterStaff(this.value);
-            });
+            if (staffSearchInput) {
+                staffSearchInput.addEventListener('input', function () {
+                    filterStaff(this.value);
+                });
+            }
 
             // Handle edit form submission
             const editForm = document.getElementById('editUserForm');
@@ -2632,8 +2634,10 @@ function startBarcodeScan() {
                 return `
                 <tr>
                     <td class="num-col" style="font-weight: 700; color: var(--inv-primary); border-left: 3px solid var(--inv-primary); padding-left: 15px;">
-                        <span>${product.code}</span>
-                        ${serializationBadge}
+                        <div style="display: flex; flex-direction: column; align-items: flex-start; gap: 4px;">
+                            <span>${product.code}</span>
+                            ${serializationBadge}
+                        </div>
                     </td>
                     <td style="font-weight: 600; color: #0f172a;">
                         <div style="display: flex; align-items: center;">
@@ -2838,7 +2842,6 @@ function startBarcodeScan() {
                         <div class="store-name">IBS SMART SOLUTIONS</div>
                         <div class="product-code">${product.code}</div>
                         <div class="product-name">${product.brand} ${product.model}</div>
-                        <div class="price-box">${product.suggested_price.toLocaleString()}<span>EGP</span></div>
                         <div><svg id="barcode"></svg></div>
                     </div>
                     <script>
@@ -3046,11 +3049,84 @@ function startBarcodeScan() {
             loadSales();
         }
 
-        function confirmReturnSale(saleId) {
-            // Stub for return functionality
-            if (confirm('Are you sure you want to process a return for this sale?')) {
-                alert('Return process started for Sale #' + saleId + '. (Feature coming soon)');
-            }
+        async function confirmReturnSale(saleId) {
+            // Professional Security Prompt for Returns
+            const overlay = document.createElement('div');
+            overlay.id = 'security-overlay';
+            overlay.style.cssText = `
+                position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+                background: rgba(15, 23, 42, 0.6); backdrop-filter: blur(8px);
+                display: flex; align-items: center; justify-content: center; z-index: 1000000;
+                animation: fadeIn 0.3s ease;
+            `;
+
+            overlay.innerHTML = `
+                <div style="background: white; width: 400px; padding: 30px; border-radius: 20px; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25); border: 1px solid rgba(255,255,255,0.1); text-align: center;">
+                    <div style="width: 60px; height: 60px; background: #fee2e2; color: #ef4444; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 20px; font-size: 24px;">🔒</div>
+                    <h3 style="margin: 0 0 10px; color: #1e293b; font-size: 20px; font-weight: 800;">Security Required</h3>
+                    <p style="margin: 0 0 25px; color: #64748b; font-size: 14px; line-height: 1.5;">Please enter the management password to authorize return for Sale <b>#${saleId}</b></p>
+                    
+                    <input type="password" id="return-security-pass" placeholder="••••••••" style="width: 100%; padding: 12px 15px; border: 2px solid #e2e8f0; border-radius: 12px; font-size: 16px; margin-bottom: 20px; text-align: center; outline: none; transition: border-color 0.2s;" onfocus="this.style.borderColor='#ef4444'">
+                    
+                    <div style="display: flex; gap: 12px;">
+                        <button id="cancel-return-btn" style="flex: 1; padding: 12px; background: #f1f5f9; color: #64748b; border: none; border-radius: 12px; font-weight: 700; cursor: pointer;">Cancel</button>
+                        <button id="confirm-return-btn" style="flex: 1; padding: 12px; background: #ef4444; color: white; border: none; border-radius: 12px; font-weight: 700; cursor: pointer; box-shadow: 0 10px 15px -3px rgba(239, 68, 68, 0.3);">Verify & Return</button>
+                    </div>
+                </div>
+                <style>
+                    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+                </style>
+            `;
+
+            document.body.appendChild(overlay);
+            const input = document.getElementById('return-security-pass');
+            input.focus();
+
+            // Handle Buttons
+            document.getElementById('cancel-return-btn').onclick = () => overlay.remove();
+            
+            const submitProcess = async () => {
+                const password = input.value;
+                if (!password) { alert('Password is required'); return; }
+
+                const btn = document.getElementById('confirm-return-btn');
+                btn.disabled = true;
+                btn.innerText = 'Verifying...';
+
+                try {
+                    const response = await fetch('api/sales.php', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            action: 'return',
+                            sale_id: saleId,
+                            password: password
+                        })
+                    });
+
+                    const result = await response.json();
+                    if (result.success) {
+                        overlay.remove();
+                        alert('✅ Return processed successfully!');
+                        loadSales(); 
+                        if (typeof loadReports === 'function') loadReports();
+                    } else {
+                        alert('❌ ' + result.message);
+                        btn.disabled = false;
+                        btn.innerText = 'Verify & Return';
+                        input.value = '';
+                        input.focus();
+                    }
+                } catch (error) {
+                    console.error('Return error:', error);
+                    alert('An error occurred during verification.');
+                    btn.disabled = false;
+                    btn.innerText = 'Verify & Return';
+                }
+            };
+
+            document.getElementById('confirm-return-btn').onclick = submitProcess;
+            input.onkeypress = (e) => { if (e.key === 'Enter') submitProcess(); };
         }
 
         async function displaySalesStats(sales) {
@@ -3135,30 +3211,54 @@ function startBarcodeScan() {
 
         function displayStaff(staff) {
             console.log('displayStaff called with data:', staff);
-            console.log('staff-tbody element:', document.getElementById('staff-tbody'));
-            
             const tbody = document.getElementById('staff-tbody');
             if (!tbody) {
                 console.error('staff-tbody element not found!');
                 return;
             }
             
-            tbody.innerHTML = staff.map(member => `
-                <tr>
-                    <td>${member.username}</td>
-                    <td>${member.name}</td>
-                    <td><span style="color: ${member.role === 'admin' ? '#0056b3' : '#28a745'};">${member.role.charAt(0).toUpperCase() + member.role.slice(1)}</span></td>
-                    <td>${member.phone || 'N/A'}</td>
-                    <td><span class="${member.is_active ? 'status-active' : 'status-inactive'}">${member.status}</span></td>
-                    <td>
-                        <button class="btn btn-sm" onclick="editUser(${member.id})" style="padding: 5px 10px; font-size: 12px;">
-                            ✏️ Edit
-                        </button>
+            tbody.innerHTML = staff.map(member => {
+                const isActive = parseInt(member.is_active) === 1;
+                const roleColor = member.role === 'admin' ? '#4f46e5' : '#64748b';
+                const roleBg = member.role === 'admin' ? '#eef2ff' : '#f8fafc';
+                const statusColor = isActive ? '#10b981' : '#f43f5e';
+                const statusBg = isActive ? '#ecfdf5' : '#fff1f2';
+                const statusText = isActive ? 'Active' : 'Inactive';
+
+                return `
+                <tr style="border-bottom: 1.5px solid #f1f5f9; transition: background 0.2s; cursor: default;" onmouseover="this.style.background='#fdfdfd'" onmouseout="this.style.background='transparent'">
+                    <td style="padding: 16px 25px; font-weight: 600; color: #1e293b;">${member.username}</td>
+                    <td style="padding: 16px 25px;">
+                        <div style="font-weight: 700; color: #0f172a;">${member.name}</div>
+                        <div style="font-size: 11px; color: #94a3b8;">${member.email || ''}</div>
                     </td>
-                </tr>
-            `).join('');
-            
-            console.log('Table HTML updated');
+                    <td style="padding: 16px 25px;">
+                        <span style="padding: 6px 14px; border-radius: 8px; font-size: 12px; font-weight: 800; background: ${roleBg}; color: ${roleColor};">
+                            ${member.role.toUpperCase()}
+                        </span>
+                    </td>
+                    <td style="padding: 16px 25px; color: #475569; font-weight: 500;">${member.phone || '—'}</td>
+                    <td style="padding: 16px 25px; text-align: center;">
+                        <span style="padding: 6px 14px; border-radius: 20px; font-size: 11px; font-weight: 700; background: ${statusBg}; color: ${statusColor};">
+                            ● ${statusText}
+                        </span>
+                    </td>
+                    <td style="padding: 16px 25px; text-align: center;">
+                        <div style="display: flex; gap: 10px; justify-content: center;">
+                            <button class="cust-action-btn edit" onclick="editUser(${member.id})" 
+                                    style="padding: 6px; background: #eff6ff; color: #2563eb; border: 1px solid #dbeafe; border-radius: 8px; cursor: pointer; transition: all 0.2s;" 
+                                    onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform='none'">
+                                ✏️
+                            </button>
+                            <button class="cust-action-btn delete" onclick="deleteUser(${member.id})" 
+                                    style="padding: 6px; background: #fef2f2; color: #dc2626; border: 1px solid #fee2e2; border-radius: 8px; cursor: pointer; transition: all 0.2s;"
+                                    onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform='none'">
+                                🗑️
+                            </button>
+                        </div>
+                    </td>
+                </tr>`;
+            }).join('');
         }
 
         function filterStaff(searchTerm) {
@@ -3684,39 +3784,87 @@ function startBarcodeScan() {
         }
 
         async function proceedWithReturn(itemsToReturn) {
-            const btn = document.getElementById('submitReturnBtn');
-            const originalText = btn.innerHTML;
-            btn.disabled = true;
-            btn.innerHTML = 'Processing...';
+            // Professional Security Prompt for Partial Returns
+            const overlay = document.createElement('div');
+            overlay.id = 'return-security-overlay';
+            overlay.style.cssText = `
+                position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+                background: rgba(15, 23, 42, 0.6); backdrop-filter: blur(8px);
+                display: flex; align-items: center; justify-content: center; z-index: 1000000;
+                animation: fadeIn 0.3s ease;
+            `;
+
+            overlay.innerHTML = `
+                <div style="background: white; width: 400px; padding: 30px; border-radius: 20px; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25); border: 1px solid rgba(255,255,255,0.1); text-align: center;">
+                    <div style="width: 60px; height: 60px; background: #fee2e2; color: #ef4444; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 20px; font-size: 24px;">🔒</div>
+                    <h3 style="margin: 0 0 10px; color: #1e293b; font-size: 20px; font-weight: 800;">Authorize Return</h3>
+                    <p style="margin: 0 0 25px; color: #64748b; font-size: 14px; line-height: 1.5;">Management password required to authorize this return.</p>
+                    
+                    <input type="password" id="partial-return-pass" placeholder="••••••••" style="width: 100%; padding: 12px 15px; border: 2px solid #e2e8f0; border-radius: 12px; font-size: 16px; margin-bottom: 20px; text-align: center; outline: none; transition: border-color 0.2s;" onfocus="this.style.borderColor='#ef4444'">
+                    
+                    <div style="display: flex; gap: 12px;">
+                        <button id="cancel-partial-return-btn" style="flex: 1; padding: 12px; background: #f1f5f9; color: #64748b; border: none; border-radius: 12px; font-weight: 700; cursor: pointer;">Cancel</button>
+                        <button id="confirm-partial-return-btn" style="flex: 1; padding: 12px; background: #ef4444; color: white; border: none; border-radius: 12px; font-weight: 700; cursor: pointer; box-shadow: 0 10px 15px -3px rgba(239, 68, 68, 0.3);">Confirm Return</button>
+                    </div>
+                </div>
+                <style>
+                    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+                </style>
+            `;
+
+            document.body.appendChild(overlay);
+            const input = document.getElementById('partial-return-pass');
+            input.focus();
+
+            document.getElementById('cancel-partial-return-btn').onclick = () => overlay.remove();
             
-            try {
-                const response = await fetch('api/sales.php', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        action: 'return',
-                        sale_id: currentReturnSaleId,
-                        items: itemsToReturn,
-                        staff_id: 1 // Default
-                    })
-                });
+            const submitProcess = async () => {
+                const password = input.value;
+                if (!password) { alert('Password is required'); return; }
+
+                const btn = document.getElementById('confirm-partial-return-btn');
+                const submitBtn = document.getElementById('submitReturnBtn');
                 
-                const result = await response.json();
-                if (result.success) {
-                    openReturnSuccessModal();
-                    closeReturnItemsModal();
-                    loadSales();
-                    loadSalesStats();
-                } else {
-                    alert('Return failed: ' + result.message);
+                btn.disabled = true;
+                btn.innerText = 'Verifying...';
+
+                try {
+                    const response = await fetch('api/sales.php', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            action: 'return',
+                            sale_id: typeof currentReturnSaleId !== 'undefined' ? currentReturnSaleId : null,
+                            items: itemsToReturn,
+                            password: password,
+                            staff_id: <?php echo isset($_SESSION['user_id']) ? (int) $_SESSION['user_id'] : 1; ?>
+                        })
+                    });
+                    
+                    const result = await response.json();
+                    if (result.success) {
+                        overlay.remove();
+                        openReturnSuccessModal();
+                        closeReturnItemsModal();
+                        loadSales();
+                        loadSalesStats();
+                    } else {
+                        alert('❌ ' + result.message);
+                        btn.disabled = false;
+                        btn.innerText = 'Confirm Return';
+                        input.value = '';
+                        input.focus();
+                    }
+                } catch (error) {
+                    console.error('Error submitting return:', error);
+                    alert('An error occurred during return processing.');
+                    btn.disabled = false;
+                    btn.innerText = 'Confirm Return';
                 }
-            } catch (error) {
-                console.error('Error submitting return:', error);
-                alert('An error occurred during return processing.');
-            } finally {
-                btn.disabled = false;
-                btn.innerHTML = originalText;
-            }
+            };
+
+            document.getElementById('confirm-partial-return-btn').onclick = submitProcess;
+            input.onkeypress = (e) => { if (e.key === 'Enter') submitProcess(); };
         }
 
         function printReceiptFromModal() {
@@ -4061,112 +4209,370 @@ function startBarcodeScan() {
             `;
         }
 
+        // Reports Management State
+        let salesTrendChart = null;
+        let paymentMethodChart = null;
+        let allReportSales = [];
+        let allReportProducts = [];
+
         async function loadReports() {
-            // Load report data and update the reports tab
+            // Default range: Current Month
+            const now = new Date();
+            const firstDay = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0];
+            const lastDay = now.toISOString().split('T')[0];
+
+            document.getElementById('report-date-from').value = firstDay;
+            document.getElementById('report-date-to').value = lastDay;
+
+            await applyReportFilter();
+        }
+
+        async function resetReportFilter() {
+            const now = new Date();
+            const firstDay = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0];
+            const lastDay = now.toISOString().split('T')[0];
+
+            document.getElementById('report-date-from').value = firstDay;
+            document.getElementById('report-date-to').value = lastDay;
+
+            await applyReportFilter();
+        }
+
+        async function applyReportFilter() {
+            const fromDate = document.getElementById('report-date-from').value;
+            const toDate = document.getElementById('report-date-to').value;
+
             try {
-                const [salesResponse, productsResponse] = await Promise.all([
-                    fetch('api/sales.php'),
-                    fetch('api/products.php')
+                // Fetch all required data from enhanced endpoints
+                const [salesRes, statsRes, topRes] = await Promise.all([
+                    fetch(`api/sales.php?date_from=${fromDate}&date_to=${toDate}`),
+                    fetch(`api/sales.php?stats=1&date_from=${fromDate}&date_to=${toDate}`),
+                    fetch(`api/sales.php?top_products=1&date_from=${fromDate}&date_to=${toDate}`)
                 ]);
 
-                const salesResult = await salesResponse.json();
-                const productsResult = await productsResponse.json();
+                const salesResult = await salesRes.json();
+                const statsResult = await statsRes.json();
+                const topResult = await topRes.json();
 
-                if (salesResult.success && productsResult.success) {
-                    const sales = salesResult.data;
-                    const products = productsResult.data;
+                if (salesResult.success && statsResult.success && topResult.success) {
+                    const filteredSales = salesResult.data;
+                    const stats = statsResult.data;
+                    const topProducts = topResult.data;
 
-                    const today = new Date().toDateString();
-                    const todaySales = sales.filter(s => new Date(s.sale_date).toDateString() === today);
-                    const thisMonth = new Date().getMonth();
-                    const monthSales = sales.filter(s => new Date(s.sale_date).getMonth() === thisMonth);
-
-                    // Calculate profit instead of just sales totals
-                    const todayProfit = await calculateProfit(todaySales);
-                    const monthProfit = await calculateProfit(monthSales);
-                    const lowStock = products.filter(p => p.min_stock !== null && p.stock <= p.min_stock).length;
-
-                    document.getElementById('today-sales').textContent = ` ${todayProfit.toFixed(0)} EGP`;
-                    document.getElementById('month-sales').textContent = ` ${monthProfit.toFixed(0)} EGP`;
-                    document.getElementById('total-products').textContent = products.length;
-                    document.getElementById('low-stock').textContent = lowStock;
+                    updateReportMetrics(filteredSales, stats);
+                    updateReportsCharts(filteredSales, stats, fromDate, toDate);
+                    updateTopProducts(topProducts);
                 }
             } catch (error) {
-                console.error('Error loading reports:', error);
+                console.error('Error applying report filter:', error);
             }
         }
 
-        // Print Report Functions
-        async function printTodaysSalesReport() {
-            try {
-                const response = await fetch('api/sales.php');
-                const result = await response.json();
+        function updateReportMetrics(sales, stats) {
+            const totalTransactions = stats.total_transactions || 0;
+            const totalRevenue = stats.total_revenue || 0;
+            
+            let totalSoldUnits = 0;
+            let cashCollected = stats.payment_breakdown ? (stats.payment_breakdown['Cash'] || 0) : 0;
+            let returnsCount = 0;
+            let returnedAmount = 0;
+            let returnedUnits = 0;
 
-                if (result.success) {
-                    const today = new Date().toDateString();
-                    const todaySales = result.data.filter(s => new Date(s.sale_date).toDateString() === today);
-
-                    const printContent = generateSalesReportHTML(todaySales, "Today's Sales Report", new Date().toLocaleDateString());
-                    openPrintWindow(printContent, "Today's Sales Report");
+            sales.forEach(sale => {
+                totalSoldUnits += parseInt(sale.item_count || 0);
+                returnedUnits += parseInt(sale.returned_units || 0);
+                returnedAmount += parseFloat(sale.returned_amount || 0);
+                
+                if (sale.status === 'returned' || sale.status === 'partially_returned' || sale.returned_units > 0) {
+                    returnsCount++;
                 }
-            } catch (error) {
-                console.error('Error generating today\'s sales report:', error);
-                alert('Error generating report. Please try again.');
-            }
+            });
+
+            const avgInvoice = totalTransactions > 0 ? (totalRevenue / totalTransactions) : 0;
+
+            // Update UI
+            document.getElementById('rep-total-transactions').innerText = totalTransactions.toLocaleString();
+            document.getElementById('rep-total-revenue').innerText = formatCurrency(totalRevenue) + ' EGP';
+            document.getElementById('rep-sold-units').innerText = totalSoldUnits.toLocaleString();
+            document.getElementById('rep-cash-collected').innerText = formatCurrency(cashCollected) + ' EGP';
+            document.getElementById('rep-returns-count').innerText = returnsCount.toLocaleString();
+            document.getElementById('rep-avg-invoice').innerText = formatCurrency(avgInvoice) + ' EGP';
+
+            // Update Returns Summary Card
+            document.getElementById('rep-ret-sales').innerText = returnsCount.toLocaleString();
+            document.getElementById('rep-ret-units').innerText = returnedUnits.toLocaleString();
+            document.getElementById('rep-ret-amount').innerText = formatCurrency(returnedAmount) + ' EGP';
         }
 
-        async function printMonthSalesReport() {
-            try {
-                const response = await fetch('api/sales.php');
-                const result = await response.json();
-
-                if (result.success) {
-                    const thisMonth = new Date().getMonth();
-                    const thisYear = new Date().getFullYear();
-                    const monthSales = result.data.filter(s => {
-                        const saleDate = new Date(s.sale_date);
-                        return saleDate.getMonth() === thisMonth && saleDate.getFullYear() === thisYear;
-                    });
-
-                    const monthName = new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
-                    const printContent = generateSalesReportHTML(monthSales, `${monthName} Sales Report`, monthName);
-                    openPrintWindow(printContent, "Monthly Sales Report");
-                }
-            } catch (error) {
-                console.error('Error generating monthly sales report:', error);
-                alert('Error generating report. Please try again.');
+        function updateReportsCharts(sales, stats, fromDate, toDate) {
+            // 1. Sales Trend (Daily Revenue)
+            const dailyData = {};
+            const startDate = new Date(fromDate);
+            const endDate = new Date(toDate);
+            
+            // Initialize every day in range
+            for (let d = new Date(startDate); d <= endDate; d.setDate(d.getDate() + 1)) {
+                dailyData[d.toISOString().split('T')[0]] = 0;
             }
+
+            sales.forEach(s => {
+                if (!s.sale_date) return;
+                const date = s.sale_date.split(' ')[0];
+                if (dailyData[date] !== undefined) {
+                    dailyData[date] += parseFloat(s.total_amount || 0);
+                }
+            });
+
+            const trendLabels = Object.keys(dailyData);
+            const trendValues = Object.values(dailyData);
+
+            if (salesTrendChart) salesTrendChart.destroy();
+            const trendCtx = document.getElementById('salesTrendChart').getContext('2d');
+            
+            // Create Gradient
+            const gradient = trendCtx.createLinearGradient(0, 0, 0, 400);
+            gradient.addColorStop(0, 'rgba(59, 130, 246, 0.4)');
+            gradient.addColorStop(1, 'rgba(59, 130, 246, 0)');
+
+            salesTrendChart = new Chart(trendCtx, {
+                type: 'line',
+                data: {
+                    labels: trendLabels,
+                    datasets: [{
+                        label: 'Revenue (EGP)',
+                        data: trendValues,
+                        borderColor: '#3b82f6',
+                        backgroundColor: gradient,
+                        fill: true,
+                        tension: 0.4,
+                        borderWidth: 4,
+                        pointRadius: 0,
+                        pointHoverRadius: 6,
+                        pointHoverBackgroundColor: '#3b82f6',
+                        pointHoverBorderColor: '#fff',
+                        pointHoverBorderWidth: 3
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    interaction: { intersect: false, mode: 'index' },
+                    plugins: { 
+                        legend: { display: false },
+                        tooltip: {
+                            backgroundColor: 'rgba(255, 255, 255, 0.9)',
+                            titleColor: '#1e293b',
+                            bodyColor: '#1e293b',
+                            borderColor: '#e2e8f0',
+                            borderWidth: 1,
+                            padding: 12,
+                            displayColors: false,
+                            callbacks: {
+                                label: function(context) {
+                                    return formatCurrency(context.parsed.y) + ' EGP';
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: { 
+                            beginAtZero: true, 
+                            grid: { color: '#f1f5f9', drawBorder: false },
+                            ticks: { font: { size: 11 }, color: '#64748b' }
+                        },
+                        x: { 
+                            grid: { display: false },
+                            ticks: { font: { size: 11 }, color: '#64748b' }
+                        }
+                    }
+                }
+            });
+
+            // 2. Payment Method Breakdown (Using accurate stats from server)
+            const paymentData = stats.payment_breakdown || {};
+            const totalAmount = stats.total_revenue || 0;
+            const pieLabels = Object.keys(paymentData);
+            const pieValues = pieLabels.map(l => paymentData[l]);
+
+            if (paymentMethodChart) paymentMethodChart.destroy();
+            const pieCtx = document.getElementById('paymentMethodChart').getContext('2d');
+            paymentMethodChart = new Chart(pieCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: pieLabels,
+                    datasets: [{
+                        data: pieValues,
+                        backgroundColor: ['#2563eb', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#64748b']
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { position: 'bottom', labels: { boxWidth: 12, padding: 15 } } }
+                }
+            });
+
+            // Populate Breakdown Table
+            const tbody = document.getElementById('payment-breakdown-body');
+            tbody.innerHTML = pieLabels.map(label => {
+                const amount = paymentData[label];
+                const pct = totalAmount > 0 ? ((amount / totalAmount) * 100).toFixed(1) : 0;
+                return `
+                    <tr>
+                        <td><strong>${label}</strong></td>
+                        <td>-</td>
+                        <td>${formatCurrency(amount)}</td>
+                        <td><span class="badge-status info">${pct}%</span></td>
+                    </tr>
+                `;
+            }).join('');
         }
 
-        async function printProductsReport() {
-            try {
-                const response = await fetch('api/products.php');
-                const result = await response.json();
 
-                if (result.success) {
-                    const printContent = generateProductsReportHTML(result.data);
-                    openPrintWindow(printContent, "Products Inventory Report");
-                }
-            } catch (error) {
-                console.error('Error generating products report:', error);
-                alert('Error generating report. Please try again.');
+        function updateTopProducts(topProducts) {
+            const tbody = document.getElementById('top-selling-products-body');
+            if (!topProducts || topProducts.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="5" style="text-align: center; color: #94a3b8; padding: 40px;">No product data available for this period.</td></tr>`;
+                return;
             }
+
+            const totalRevenue = topProducts.reduce((sum, p) => sum + parseFloat(p.total_revenue || 0), 0);
+            
+            const avatarColors = ['#eff6ff', '#f0fdf4', '#faf5ff', '#fefce8', '#fef2f2', '#f0f9ff'];
+            const textColors = ['#2563eb', '#16a34a', '#9333ea', '#ca8a04', '#dc2626', '#0891b2'];
+
+            tbody.innerHTML = topProducts.map((p, idx) => {
+                const share = totalRevenue > 0 ? ((parseFloat(p.total_revenue) / totalRevenue) * 100).toFixed(1) : 0;
+                const colorIdx = idx % avatarColors.length;
+                const initials = (p.product_name || 'P').split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
+                
+                return `
+                    <tr>
+                        <td style="width: 120px;"><code style="background: #f1f5f9; padding: 4px 8px; border-radius: 6px; font-size: 11px; font-weight: 700; color: #475569;">${p.product_code || 'N/A'}</code></td>
+                        <td>
+                            <div style="display: flex; align-items: center; gap: 12px;">
+                                <div style="width: 36px; height: 36px; border-radius: 10px; background: ${p.image_url ? 'none' : avatarColors[colorIdx]}; color: ${textColors[colorIdx]}; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 12px; border: 1px solid rgba(0,0,0,0.03); overflow: hidden;">
+                                    ${p.image_url ? `<img src="${p.image_url}" style="width: 100%; height: 100%; object-fit: cover;">` : initials}
+                                </div>
+                                <div style="font-weight: 700; color: #1e293b;">${p.product_name}</div>
+                            </div>
+                        </td>
+                        <td class="text-right" style="font-weight: 600;">${parseInt(p.total_units).toLocaleString()} <span style="font-size: 11px; color: #94a3b8; font-weight: 400;">units</span></td>
+                        <td class="text-right" style="font-weight: 800; color: #16a34a; font-size: 15px;">${formatCurrency(p.total_revenue)}</td>
+                        <td class="text-right">
+                            <div style="display: inline-flex; flex-direction: column; align-items: flex-end; gap: 4px;">
+                                <span class="badge-status success" style="font-weight: 700;">${share}%</span>
+                                <div style="width: 60px; height: 4px; background: #f1f5f9; border-radius: 2px; overflow: hidden;">
+                                    <div style="width: ${share}%; height: 100%; background: #16a34a;"></div>
+                                </div>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
         }
 
-        async function printLowStockReport() {
-            try {
-                const response = await fetch('api/products.php');
-                const result = await response.json();
+        function printBranchReport() {
+            const fromDate = document.getElementById('report-date-from').value;
+            const toDate = document.getElementById('report-date-to').value;
+            
+            const metrics = {
+                transactions: document.getElementById('rep-total-transactions').innerText,
+                revenue: document.getElementById('rep-total-revenue').innerText,
+                units: document.getElementById('rep-sold-units').innerText,
+                cash: document.getElementById('rep-cash-collected').innerText,
+                returns: document.getElementById('rep-returns-count').innerText,
+                avg: document.getElementById('rep-avg-invoice').innerText
+            };
 
-                if (result.success) {
-                    const lowStockItems = result.data.filter(p => p.stock <= p.min_stock);
-                    const printContent = generateLowStockReportHTML(lowStockItems);
-                    openPrintWindow(printContent, "Low Stock Alert Report");
-                }
-            } catch (error) {
-                console.error('Error generating low stock report:', error);
-                alert('Error generating report. Please try again.');
-            }
+            const printWindow = window.open('', '_blank');
+            printWindow.document.write(`
+                <html>
+                <head>
+                    <title>Branch Report: ${fromDate} - ${toDate}</title>
+                    <style>
+                        @page { size: A4; margin: 15mm; }
+                        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; padding: 20px; line-height: 1.4; color: #333; }
+                        .header { text-align: center; border-bottom: 3px solid #1e40af; padding-bottom: 20px; margin-bottom: 30px; }
+                        .company { font-size: 28px; font-weight: bold; color: #1e40af; margin-bottom: 5px; }
+                        .report-title { font-size: 20px; color: #64748b; font-weight: 600; }
+                        .period { font-size: 14px; color: #94a3b8; margin-top: 5px; }
+                        
+                        .section-title { font-size: 16px; font-weight: bold; border-left: 5px solid #1e40af; padding-left: 10px; margin: 30px 0 15px 0; color: #1e293b; background: #f8fafc; padding: 8px 10px; }
+                        
+                        .metrics-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; margin-bottom: 30px; }
+                        .metric-box { border: 1px solid #e2e8f0; padding: 15px; border-radius: 8px; text-align: center; }
+                        .metric-label { font-size: 12px; color: #64748b; font-weight: 600; text-transform: uppercase; }
+                        .metric-value { font-size: 20px; font-weight: 800; color: #1e40af; margin-top: 5px; }
+                        
+                        table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 13px; }
+                        th { background: #f8fafc; text-align: left; padding: 12px 10px; border-bottom: 2px solid #e2e8f0; color: #475569; }
+                        td { padding: 10px; border-bottom: 1px solid #f1f5f9; }
+                        .text-right { text-align: right; }
+                        
+                        .footer { margin-top: 80px; display: flex; justify-content: space-between; }
+                        .signature { border-top: 1px solid #000; width: 220px; text-align: center; padding-top: 8px; font-weight: bold; }
+                        
+                        @media print {
+                            .no-print { display: none; }
+                            body { padding: 0; }
+                        }
+                    </style>
+                </head>
+                <body onload="window.print();">
+                    <div class="header">
+                        <div class="company">📱 IBS MOBILE SHOP</div>
+                        <div class="report-title">Branch Operational Report</div>
+                        <div class="period">Authorized Report for Period: ${fromDate} TO ${toDate}</div>
+                    </div>
+
+                    <div class="section-title">📊 EXECUTIVE SUMMARY</div>
+                    <div class="metrics-grid">
+                        <div class="metric-box"><div class="metric-label">Transactions</div><div class="metric-value">${metrics.transactions}</div></div>
+                        <div class="metric-box"><div class="metric-label">Total Revenue</div><div class="metric-value">${metrics.revenue}</div></div>
+                        <div class="metric-box"><div class="metric-label">Sold Units</div><div class="metric-value">${metrics.units}</div></div>
+                        <div class="metric-box"><div class="metric-label">Cash Collected</div><div class="metric-value">${metrics.cash}</div></div>
+                        <div class="metric-box"><div class="metric-label">Returns</div><div class="metric-value">${metrics.returns}</div></div>
+                        <div class="metric-box"><div class="metric-label">Avg. Invoice</div><div class="metric-value">${metrics.avg}</div></div>
+                    </div>
+
+                    <div class="section-title">🏆 TOP SELLING PRODUCTS</div>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>CODE</th>
+                                <th>PRODUCT NAME</th>
+                                <th class="text-right">UNITS</th>
+                                <th class="text-right">REVENUE</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${document.getElementById('top-selling-products-body').innerHTML.replace(/badge-status success/g, '').replace(/<code.*?>/g, '').replace(/<\/code>/g, '')}
+                        </tbody>
+                    </table>
+
+                    <div class="section-title">💳 PAYMENT BREAKDOWN</div>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>METHOD</th>
+                                <th>COUNT</th>
+                                <th class="text-right">TOTAL AMOUNT</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${document.getElementById('payment-breakdown-body').innerHTML.replace(/<span.*?>.*?<\/span>/g, '')}
+                        </tbody>
+                    </table>
+
+                    <div class="footer">
+                        <div class="signature">Branch Manager Signature</div>
+                        <div class="signature">System Administrator</div>
+                    </div>
+                </body>
+                </html>
+            `);
+            printWindow.document.close();
         }
 
         function generateSalesReportHTML(sales, title, period) {
@@ -4653,6 +5059,9 @@ function startBarcodeScan() {
                     <td>${entry.description || 'No description'}</td>
                     <td>${formatCurrency(entry.price || 0)} EGP</td>
                     <td>
+                        <button class="btn btn-sm" onclick="printFinancialEntry('income', ${entry.id})" style="padding: 3px 8px; font-size: 12px; margin-right: 5px; background: #64748b; color: white;">
+                            🖨️ Print
+                        </button>
                         <button class="btn btn-sm" onclick="editIncomeEntry(${entry.id})" style="padding: 3px 8px; font-size: 12px; margin-right: 5px;">
                             ✏️ Edit
                         </button>
@@ -4665,33 +5074,29 @@ function startBarcodeScan() {
         }
 
         function displayIncomeStats(incomeEntries) {
-            const statsElement = document.getElementById('income-stats');
-            if (!statsElement) {
-                console.warn('Income stats element not found');
-                return;
-            }
-            
             const totalIncome = (incomeEntries || []).reduce((sum, entry) => sum + (entry.price || 0), 0);
-            const thisMonthIncome = (incomeEntries || []).filter(entry => {
-                const entryDate = new Date(entry.entry_date);
-                const now = new Date();
-                return entryDate.getMonth() === now.getMonth() && entryDate.getFullYear() === now.getFullYear();
-            }).reduce((sum, entry) => sum + (entry.price || 0), 0);
+            
+            // Update the unified summary card
+            const revStatTotal = document.getElementById('stat-total-revenue');
+            if (revStatTotal) revStatTotal.innerText = formatCurrency(totalIncome) + ' EGP';
+            
+            updateUnifiedFinancialStats();
+        }
 
-            statsElement.innerHTML = `
-                <div class="stat-card">
-                    <h3>${(incomeEntries || []).length}</h3>
-                    <p>Total Entries</p>
-                </div>
-                <div class="stat-card">
-                    <h3>${formatCurrency(totalIncome)} EGP</h3>
-                    <p>Total Income</p>
-                </div>
-                <div class="stat-card">
-                    <h3>${formatCurrency(thisMonthIncome)} EGP</h3>
-                    <p>This Month</p>
-                </div>
-            `;
+        function updateUnifiedFinancialStats() {
+            const totalRevenue = (allIncomeEntries || []).reduce((sum, entry) => sum + (entry.price || 0), 0);
+            const totalExpenses = (allPaymentEntries || []).reduce((sum, entry) => sum + (entry.price || 0), 0);
+            const netBalance = totalRevenue - totalExpenses;
+            const totalEntries = (allIncomeEntries || []).length + (allPaymentEntries || []).length;
+
+            const balStat = document.getElementById('stat-net-balance');
+            if (balStat) {
+                balStat.innerText = formatCurrency(netBalance) + ' EGP';
+                balStat.style.color = netBalance >= 0 ? 'var(--fin-revenue, #10b981)' : 'var(--fin-expense, #ef4444)';
+            }
+
+            const entriesStat = document.getElementById('stat-fin-entries');
+            if (entriesStat) entriesStat.innerText = totalEntries;
         }
 
         async function deleteIncomeEntry(entryId) {
@@ -4875,6 +5280,9 @@ function startBarcodeScan() {
                     <td>${entry.description || 'No description'}</td>
                     <td>${formatCurrency(entry.price || 0)} EGP</td>
                     <td>
+                        <button class="btn btn-sm" onclick="printFinancialEntry('payment', ${entry.id})" style="padding: 3px 8px; font-size: 12px; margin-right: 5px; background: #64748b; color: white;">
+                            🖨️ Print
+                        </button>
                         <button class="btn btn-sm" onclick="editPaymentEntry(${entry.id})" style="padding: 3px 8px; font-size: 12px; margin-right: 5px;">
                             ✏️ Edit
                         </button>
@@ -4887,33 +5295,13 @@ function startBarcodeScan() {
         }
 
         function displayPaymentStats(paymentEntries) {
-            const statsElement = document.getElementById('payment-stats');
-            if (!statsElement) {
-                console.warn('Payment stats element not found');
-                return;
-            }
-            
             const totalPayments = (paymentEntries || []).reduce((sum, entry) => sum + (entry.price || 0), 0);
-            const thisMonthPayments = (paymentEntries || []).filter(entry => {
-                const entryDate = new Date(entry.entry_date);
-                const now = new Date();
-                return entryDate.getMonth() === now.getMonth() && entryDate.getFullYear() === now.getFullYear();
-            }).reduce((sum, entry) => sum + (entry.price || 0), 0);
-
-            statsElement.innerHTML = `
-                <div class="stat-card">
-                    <h3>${(paymentEntries || []).length}</h3>
-                    <p>Total Entries</p>
-                </div>
-                <div class="stat-card">
-                    <h3>${formatCurrency(totalPayments)} EGP</h3>
-                    <p>Total Payments</p>
-                </div>
-                <div class="stat-card">
-                    <h3>${formatCurrency(thisMonthPayments)} EGP</h3>
-                    <p>This Month</p>
-                </div>
-            `;
+            
+            // Update the unified summary card
+            const expStatTotal = document.getElementById('stat-total-expenses');
+            if (expStatTotal) expStatTotal.innerText = formatCurrency(totalPayments) + ' EGP';
+            
+            updateUnifiedFinancialStats();
         }
 
         async function deletePaymentEntry(entryId) {
@@ -4969,6 +5357,148 @@ function startBarcodeScan() {
                 console.error('Error deleting payment entry:', error);
                 alert('Error deleting payment entry: ' + error.message);
             }
+        }
+
+        function printFinancialEntry(type, entryId) {
+            const entry = type === 'income' 
+                ? allIncomeEntries.find(e => e.id === entryId)
+                : allPaymentEntries.find(e => e.id === entryId);
+
+            if (!entry) {
+                alert('Entry not found');
+                return;
+            }
+
+            const typeLabel = type === 'income' ? 'Operating Revenue' : 'Operating Expenses';
+            const typeLabelAr = type === 'income' ? 'الإيرادات التشغيلية' : 'المصروفات التشغيلية';
+            const date = new Date(entry.entry_date).toLocaleString();
+            const receiptId = `#FIN-${type.toUpperCase()}-${entry.id}`;
+
+            const printWindow = window.open('', '_blank', 'width=400,height=600');
+            printWindow.document.write(`
+                <html>
+                <head>
+                    <title>Financial Receipt - ${entryId}</title>
+                    <style>
+                        @page { 
+                            size: 80mm auto; 
+                            margin: 5mm; 
+                        }
+                        body { 
+                            font-family: 'Courier New', monospace; 
+                            width: 80mm; 
+                            margin: 0 auto; 
+                            padding: 10px; 
+                            font-size: 12px;
+                            line-height: 1.2;
+                            color: #000;
+                        }
+                        .header { 
+                            text-align: center; 
+                            margin-bottom: 15px; 
+                            border-bottom: 2px dashed #000; 
+                            padding-bottom: 10px; 
+                        }
+                        .company-name { 
+                            font-size: 16px; 
+                            font-weight: bold; 
+                            margin-bottom: 5px;
+                        }
+                        .company-address { 
+                            font-size: 10px; 
+                            margin-bottom: 5px;
+                        }
+                        .receipt-info { 
+                            margin-bottom: 15px; 
+                            font-size: 11px;
+                            border-bottom: 1px dashed #000;
+                            padding-bottom: 10px;
+                        }
+                        .receipt-info div { 
+                            margin-bottom: 3px;
+                            display: flex;
+                            justify-content: space-between;
+                        }
+                        .details-section {
+                            margin-bottom: 15px;
+                        }
+                        .details-label {
+                            font-weight: bold;
+                            margin-bottom: 5px;
+                            text-decoration: underline;
+                        }
+                        .details-content {
+                            font-size: 11px;
+                            background: #fff;
+                            padding: 5px;
+                            border: 1px dotted #000;
+                            min-height: 30px;
+                            margin-bottom: 10px;
+                        }
+                        .amount-section { 
+                            border-top: 2px solid #000; 
+                            padding-top: 10px;
+                            margin-top: 10px;
+                            text-align: center;
+                        }
+                        .amount-label {
+                            font-weight: bold;
+                            font-size: 14px;
+                        }
+                        .amount-value {
+                            font-weight: bold;
+                            font-size: 20px;
+                            display: block;
+                            margin-top: 5px;
+                        }
+                        .footer { 
+                            text-align: center; 
+                            margin-top: 15px; 
+                            border-top: 1px dashed #000; 
+                            padding-top: 10px; 
+                            font-size: 10px;
+                        }
+                        .rtl { direction: rtl; font-family: 'Arial', sans-serif; }
+                        @media print { 
+                            body { width: auto; margin: 0; }
+                        }
+                    </style>
+                </head>
+                <body onload="window.print(); window.close();">
+                    <div class="header">
+                        <div class="company-name">📱 IBS MOBILE SHOP</div>
+                        <div class="company-address">Mobile & Electronics Store</div>
+                        <div class="company-address">📍 Egypt - Cairo</div>
+                    </div>
+                    
+                    <div style="text-align: center; font-weight: bold; margin-bottom: 10px; font-size: 14px;">FINANCIAL RECEIPT</div>
+
+                    <div class="receipt-info">
+                        <div><span>🧾 ID:</span> <span>${receiptId}</span></div>
+                        <div><span>📅 DATE:</span> <span>${date}</span></div>
+                        <div><span>👤 STAFF:</span> <span>${entry.created_by_name || 'Admin'}</span></div>
+                        <div class="rtl"><span>📌 Category:</span> <span>${typeLabelAr}</span></div>
+                        <div><span>📌 Type:</span> <span>${typeLabel}</span></div>
+                    </div>
+
+                    <div class="details-section">
+                        <div class="details-label">DESCRIPTION / الوصف:</div>
+                        <div class="details-content">${entry.description || 'N/A'}</div>
+                    </div>
+
+                    <div class="amount-section">
+                        <span class="amount-label">TOTAL AMOUNT / الإجمالي:</span>
+                        <span class="amount-value">${formatCurrency(entry.price || 0)} EGP</span>
+                    </div>
+
+                    <div class="footer">
+                        Thank you for using IBS System<br>
+                        شكراً لاستخدامكم نظام آي بي إس
+                    </div>
+                </body>
+                </html>
+            `);
+            printWindow.document.close();
         }
 
         function editPaymentEntry(entryId) {

@@ -135,6 +135,36 @@ switch ($method) {
         }
         break;
 
+    case 'PUT':
+        $data = json_decode(file_get_contents("php://input"));
+        if (!empty($data->id) && !empty($data->name)) {
+            $query = "UPDATE brands SET name = ?, description = ?, logo_url = ?, website = ?, contact_email = ? WHERE id = ?";
+            $stmt = $db->prepare($query);
+            if ($stmt->execute([
+                $data->name, 
+                $data->description ?? '', 
+                $data->logo_url ?? '', 
+                $data->website ?? '', 
+                $data->contact_email ?? '', 
+                $data->id
+            ])) {
+                echo json_encode(['success' => true, 'message' => 'Brand updated']);
+            } else {
+                echo json_encode(['success' => false, 'message' => 'Failed to update brand']);
+            }
+        }
+        break;
+
+    case 'DELETE':
+        if (isset($_GET['id'])) {
+            $query = "UPDATE brands SET is_active = 0 WHERE id = ?";
+            $stmt = $db->prepare($query);
+            if ($stmt->execute([$_GET['id']])) {
+                echo json_encode(['success' => true, 'message' => 'Brand deleted']);
+            }
+        }
+        break;
+
     default:
         ob_clean();
         http_response_code(405);

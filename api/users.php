@@ -61,7 +61,7 @@ switch($method) {
                 'role' => $row['role'],
                 'phone' => $row['phone'],
                 'email' => $row['email'],
-                'is_active' => (bool)$row['is_active'],
+                'is_active' => (int)$row['is_active'],
                 'status' => $row['is_active'] ? 'Active' : 'Inactive',
                 'created_at' => $row['created_at']
             ];
@@ -244,41 +244,35 @@ switch($method) {
                         if (in_array('email', $columns)) {
                             $update_fields[] = "email = ?";
                             $update_values[] = $data->email ?? null;
-                            $update_types .= "s";
                         }
-                        
-                        // Always update is_active
-                        $update_fields[] = "is_active = ?";
-                        $update_values[] = $data->is_active;
-                        $update_types .= "s";
-                        
-                        $update_fields[] = "id = ?";
-                        $update_values[] = $data->id;
-                        $update_types .= "i";
+
+                        // Always update is_active if provided
+                        if (isset($data->is_active)) {
+                            $update_fields[] = "is_active = ?";
+                            $update_values[] = $data->is_active;
+                        }
                         
                         $query = "UPDATE users SET " . implode(', ', $update_fields) . " WHERE id = ?";
                         $stmt = $db->prepare($query);
                         
-                        error_log("DEBUG: Dynamic update - Query: $query, Fields: " . implode(', ', $update_fields) . ", Values: " . json_encode($update_values) . ", Types: $update_types");
-                        
-                        // Bind parameters dynamically - count actual parameters in query
+                        // Bind parameters dynamically
                         $param_index = 1;
                         foreach ($update_values as $value) {
-                            error_log("DEBUG: Binding param $param_index with value: " . json_encode($value));
                             $stmt->bindValue($param_index, $value);
                             $param_index++;
                         }
+                        
+                        // Bind the final ID for the WHERE clause
+                        $stmt->bindValue($param_index, $data->id);
                     } catch (Exception $e) {
-                        // Fallback: update without phone and email if columns don't exist
-                        $query = "UPDATE users SET name = ?, role = ?, is_active = ?, password = ? WHERE id = ?";
+                        // Fallback: update matching columns - is_active is mandatory
+                        $query = "UPDATE users SET name = ?, role = ?, is_active = ? WHERE id = ?";
                         $stmt = $db->prepare($query);
                         
-                        // Only bind parameters that are actually present in the query
-                        $stmt->bindParam(1, $data->name);
-                        $stmt->bindParam(2, $data->role);
-                        $stmt->bindParam(3, $data->is_active);
-                        $stmt->bindParam(4, $data->password ?? null);
-                        $stmt->bindParam(5, $data->id);
+                        $stmt->bindValue(1, $data->name);
+                        $stmt->bindValue(2, $data->role);
+                        $stmt->bindValue(3, $data->is_active);
+                        $stmt->bindValue(4, $data->id);
                     }
                 }
                 

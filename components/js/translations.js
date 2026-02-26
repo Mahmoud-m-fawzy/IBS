@@ -33,7 +33,8 @@ const translations = {
             logout: "Logout",
             welcome: "Welcome",
             receipt: "Receipt",
-            customers: "Customers"
+            customers: "Customers",
+            financial: "Financial"
         },
         ar: {
             dashboard: "لوحة التحكم",
@@ -46,7 +47,8 @@ const translations = {
             logout: "تسجيل الخروج",
             welcome: "مرحباً",
             receipt: "الإيصال",
-            customers: "العملاء"
+            customers: "العملاء",
+            financial: "المالية"
         }
     },
 
@@ -415,58 +417,48 @@ const translations = {
     // Reports Management
     reports: {
         en: {
-            title: "Reports",
-            printReports: "Print Reports",
-            todaysSalesReport: "Today's Sales Report",
-            monthlySalesReport: "Monthly Sales Report",
-            inventoryReport: "Inventory Report",
-            profitLossReport: "Profit & Loss Report",
-            lowStockReport: "Low Stock Report",
-            generateReport: "Generate Report",
-            exportToPDF: "Export to PDF",
-            exportToExcel: "Export to Excel",
-            dateRange: "Date Range",
-            fromDate: "From Date",
-            toDate: "To Date",
+            title: "Operational Reports",
+            dateFrom: "From Date",
+            dateTo: "To Date",
+            apply: "Apply Filter",
+            reset: "Reset Range",
+            printReport: "Print Branch Report",
+            totalTransactions: "Total Transactions",
             totalRevenue: "Total Revenue",
-            totalProfit: "Total Profit",
-            totalExpenses: "Total Expenses",
-            netProfit: "Net Profit",
-            lowStockItems: "Low Stock Items",
-            outOfStockItems: "Out of Stock Items",
-            todaySales: "Today's Sales",
-            todayProfit: "Today's Profit",
-            monthSales: "This Month Sales",
-            monthProfit: "This Month Profit",
-            totalProducts: "Total Products",
-            lowStock: "Low Stock Items"
+            soldUnits: "Total Sold Units",
+            cashCollected: "Cash Collected",
+            returnsCount: "Returns Count",
+            avgInvoice: "Avg Invoice Value",
+            salesTrend: "Sales Trend",
+            paymentBreakdown: "Payment Breakdown",
+            topProducts: "Top Selling Products",
+            revenue: "Revenue",
+            returnsSummary: "Returns Summary",
+            returnedSales: "Returned Sales",
+            returnedUnits: "Returned Units",
+            returnedAmount: "Returned Amount"
         },
         ar: {
-            title: "التقارير",
-            printReports: "طباعة التقارير",
-            todaysSalesReport: "تقرير مبيعات اليوم",
-            monthlySalesReport: "تقرير المبيعات الشهري",
-            inventoryReport: "تقرير المخزون",
-            profitLossReport: "تقرير الأرباح والخسائر",
-            lowStockReport: "تقرير المخزون المنخفض",
-            generateReport: "توليد تقرير",
-            exportToPDF: "تصدير إلى PDF",
-            exportToExcel: "تصدير إلى Excel",
-            dateRange: "نطاق التاريخ",
-            fromDate: "من تاريخ",
-            toDate: "إلى تاريخ",
+            title: "تقارير العمليات",
+            dateFrom: "من تاريخ",
+            dateTo: "إلى تاريخ",
+            apply: "تطبيق الفلتر",
+            reset: "إعادة تعيين",
+            printReport: "طباعة تقرير الفرع",
+            totalTransactions: "إجمالي العمليات",
             totalRevenue: "إجمالي الإيرادات",
-            totalProfit: "إجمالي الأرباح",
-            totalExpenses: "إجمالي المصروفات",
-            netProfit: "صافي الربح",
-            lowStockItems: "عناصر المخزون المنخفض",
-            outOfStockItems: "عناصر غير متوفرة في المخزون",
-            todaySales: "مبيعات اليوم",
-            todayProfit: "ربح اليوم",
-            monthSales: "مبيعات هذا الشهر",
-            monthProfit: "ربح هذا الشهر",
-            totalProducts: "إجمالي المنتجات",
-            lowStock: "عناصر المخزون المنخفض"
+            soldUnits: "إجمالي الوحدات المباعة",
+            cashCollected: "النقدية المحصلة",
+            returnsCount: "عدد المرتجعات",
+            avgInvoice: "متوسط قيمة الفاتورة",
+            salesTrend: "اتجاه المبيعات",
+            paymentBreakdown: "تحليل طرق الدفع",
+            topProducts: "المنتجات الأكثر مبيعاً",
+            revenue: "الإيرادات",
+            returnsSummary: "ملخص المرتجعات",
+            returnedSales: "المبيعات المرتجعة",
+            returnedUnits: "الوحدات المرتجعة",
+            returnedAmount: "إجمالي المرتجعات"
         }
     },
 
@@ -496,7 +488,16 @@ const translations = {
             staff: "Staff",
             edit: "Edit",
             delete: "Delete",
-            confirmDelete: "Are you sure you want to delete this staff member?"
+            confirmDelete: "Are you sure you want to delete this staff member?",
+            activeStaff: "Active Staff",
+            inactiveStaff: "Inactive Staff",
+            totalStaff: "Total Staff",
+            sendMessage: "Send Message to All Staff",
+            writeMessage: "Write your message for all staff members...",
+            sendSms: "🚀 Send via Twilio",
+            smsSent: "Messages sent successfully! 🎉",
+            smsError: "Failed to send some messages.",
+            smsPartial: "Some messages failed to send. Please check audit logs."
         },
         ar: {
             title: "إدارة الموظفين",
@@ -521,14 +522,24 @@ const translations = {
             staff: "موظف",
             edit: "تعديل",
             delete: "حذف",
-            confirmDelete: "هل أنت متأكد من حذف هذا الموظف؟"
+            confirmDelete: "هل أنت متأكد من حذف هذا الموظف؟",
+            activeStaff: "الموظفون النشطون",
+            inactiveStaff: "غير النشطين",
+            totalStaff: "إجمالي الموظفين",
+            sendMessage: "إرسال رسالة للكل",
+            writeMessage: "اكتب رسالتك لجميع الموظفين...",
+            sendSms: "🚀 إرسال عبر Twilio",
+            smsSent: "تم إرسال الرسائل بنجاح! 🎉",
+            smsError: "فشل إرسال بعض الرسائل.",
+            smsPartial: "فشل إرسال بعض الرسائل. يرجى مراجعة سجلات التدقيق."
         }
     },
 
     // Income Management
     income: {
         en: {
-            title: "Income Management",
+            title: "Operating Revenue",
+            arabicTitle: "الإيرادات التشغيلية",
             addNewIncome: "Add New Income Entry",
             incomeEntries: "Income Entries",
             price: "Price",
@@ -543,11 +554,12 @@ const translations = {
             amountGreaterThanZero: "Amount must be greater than 0",
             provideIncomeDetails: "Provide details about this income entry",
             delete: "Delete",
-            confirmDelete: "Are you sure you want to delete this income entry?"
+            confirmDelete: "Are you sure you want to delete this income entry?",
+            print: "Print Receipt"
         },
         ar: {
-            title: "إدارة الدخل",
-            addNewIncome: "إضافة دخلة دخل جديدة",
+            title: "الإيرادات التشغيلية",
+            addNewIncome: "إضافة إيراد جديد",
             incomeEntries: "مدخلات الدخل",
             price: "السعر",
             description: "الوصف",
@@ -555,51 +567,55 @@ const translations = {
             actions: "الإجراءات",
             amount: "المبلغ",
             totalIncome: "إجمالي الدخل",
-            addIncomeEntry: "إضافة دخلة دخل",
+            addIncomeEntry: "إضافة دخل",
             enterIncomeAmount: "أدخل مبلغ الدخل",
             describeIncome: "صف مصدر الدخل...",
             amountGreaterThanZero: "يجب أن يكون المبلغ أكبر من صفر",
             provideIncomeDetails: "قدم تفاصيل حول دخلة الدخل هذه",
             delete: "حذف",
-            confirmDelete: "هل أنت متأكد من حذف دخلة الدخل هذه؟"
+            confirmDelete: "هل أنت متأكد من حذف دخلة الدخل هذه؟",
+            print: "طباعة إيصال"
         }
     },
 
     // Payment Management
     payment: {
         en: {
-            title: "Payment Management",
-            addNewPayment: "Add New Payment Entry",
-            paymentEntries: "Payment Entries",
+            title: "Operating Expenses",
+            arabicTitle: "المصروفات التشغيلية",
+            addNewPayment: "Add New Expense Entry",
+            paymentEntries: "Expense Entries",
             amount: "Amount",
             description: "Description",
             date: "Date",
             actions: "Actions",
-            totalPayments: "Total Payments",
-            addPaymentEntry: "Add Payment Entry",
-            enterPaymentAmount: "Enter payment amount",
-            describePayment: "Describe the payment purpose...",
+            totalPayments: "Total Expenses",
+            addPaymentEntry: "Add Expense Entry",
+            enterPaymentAmount: "Enter amount",
+            describePayment: "Describe the expense...",
             amountGreaterThanZero: "Amount must be greater than 0",
-            providePaymentDetails: "Provide details about this payment",
+            providePaymentDetails: "Provide details about this expense",
             delete: "Delete",
-            confirmDelete: "Are you sure you want to delete this payment entry?"
+            confirmDelete: "Are you sure you want to delete this expense entry?",
+            print: "Print Receipt"
         },
         ar: {
-            title: "إدارة المدفوعات",
-            addNewPayment: "إضافة مدفوعة جديدة",
-            paymentEntries: "المدفوعات",
+            title: "المصروفات التشغيلية",
+            addNewPayment: "إضافة مصروفات عمومية",
+            paymentEntries: "المصروفات",
             amount: "المبلغ",
             description: "الوصف",
             date: "التاريخ",
             actions: "الإجراءات",
-            totalPayments: "إجمالي المدفوعات",
-            addPaymentEntry: "إضافة مدفوعة",
-            enterPaymentAmount: "أدخل مبلغ الدفعة",
-            describePayment: "صف غرض الدفعة...",
+            totalPayments: "إجمالي المصروفات",
+            addPaymentEntry: "إضافة مصروفات",
+            enterPaymentAmount: "أدخل المبلغ",
+            describePayment: "صف المصروفات...",
             amountGreaterThanZero: "يجب أن يكون المبلغ أكبر من صفر",
-            providePaymentDetails: "قدم تفاصيل حول هذه الدفعة",
+            providePaymentDetails: "قدم تفاصيل حول هذه المصروفات",
             delete: "حذف",
-            confirmDelete: "هل أنت متأكد من حذف هذه الدفعة؟"
+            confirmDelete: "هل أنت متأكد من حذف هذه المصروفات؟",
+            print: "طباعة إيصال"
         }
     },
 
@@ -623,7 +639,21 @@ const translations = {
             deletedSuccess: "Customer deleted successfully!",
             deleteConfirm: "Are you sure you want to delete this customer?",
             errorUpdating: "Error updating customer. Please try again.",
-            errorDeleting: "Error deleting customer. Please try again."
+            errorDeleting: "Error deleting customer. Please try again.",
+            totalCustomers: "Total Customers",
+            totalRevenue: "Total Revenue",
+            newThisMonth: "New This Month",
+            topCustomer: "Top Customer",
+            addCustomer: "Add Customer",
+            saveCustomer: "Save Customer",
+            searchByName: "Search by name...",
+            searchByPhone: "Search by phone...",
+            searchByEmail: "Search by email...",
+            namePlaceholder: "Customer full name...",
+            phonePlaceholder: "Phone number...",
+            emailPlaceholder: "Email address...",
+            addressPlaceholder: "Address...",
+            searchResults: "Search Results"
         },
         ar: {
             title: "علامة تبويب العملاء",
@@ -643,7 +673,21 @@ const translations = {
             deletedSuccess: "تم حذف العميل بنجاح!",
             deleteConfirm: "هل أنت متأكد من حذف هذا العميل؟",
             errorUpdating: "خطأ أثناء تحديث العميل. يرجى المحاولة مرة أخرى.",
-            errorDeleting: "خطأ أثناء حذف العميل. يرجى المحاولة مرة أخرى."
+            errorDeleting: "خطأ أثناء حذف العميل. يرجى المحاولة مرة أخرى.",
+            totalCustomers: "إجمالي العملاء",
+            totalRevenue: "إجمالي الإيرادات",
+            newThisMonth: "جديد هذا الشهر",
+            topCustomer: "أفضل عميل",
+            addCustomer: "إضافة عميل",
+            saveCustomer: "حفظ العميل",
+            searchByName: "بحث بالاسم...",
+            searchByPhone: "بحث بالهاتف...",
+            searchByEmail: "بحث بالبريد...",
+            namePlaceholder: "اسم العميل بالكامل...",
+            phonePlaceholder: "رقم الهاتف...",
+            emailPlaceholder: "البريد الإلكتروني...",
+            addressPlaceholder: "العنوان...",
+            searchResults: "نتائج البحث"
         }
     },
 
@@ -731,6 +775,124 @@ const translations = {
             numericOnly: "أرقام فقط",
             positiveNumber: "الرجاء إدخال رقم موجب"
         }
+    },
+
+    // Owner Dashboard
+    owner: {
+        en: {
+            title: "Global Enterprise Control",
+            subtitle: "Global performance across all branches",
+            stats: {
+                totalBranches: "Total Branches",
+                monthlyRevenue: "Monthly Revenue",
+                monthlyUnits: "Units Sold (Month)",
+                monthlyProfit: "Net Profit (Month)",
+                transactions: "Total Transactions",
+                lowStock: "Low Stock Items",
+                totalReturns: "Total Returns",
+                bestPerforming: "Best Performing Branch"
+            },
+            menu: {
+                dashboard: "Overview",
+                branches: "Branch Control",
+                masterData: "Master Data",
+                products: "Global Stock",
+                analytics: "BI Analytics",
+                access: "Access Control",
+                settings: "System Config",
+                logout: "System Logout"
+            },
+            branches: {
+                title: "Branch Control Panel",
+                add: "Add New Branch",
+                table: {
+                    name: "Branch Name",
+                    location: "Location",
+                    revenue: "Revenue",
+                    units: "Units",
+                    status: "Status",
+                    actions: "Control"
+                }
+            },
+            products: {
+                title: "Global Product Master",
+                table: {
+                    name: "Product & Model",
+                    branch: "Storage Branch",
+                    purchase: "Cost",
+                    minPrice: "Min Price",
+                    market: "Market Price",
+                    stock: "Stock",
+                    status: "Lock Status"
+                }
+            },
+            common: {
+                egp: "EGP",
+                units: "Units",
+                active: "Active",
+                disabled: "Disabled",
+                locked: "Locked",
+                save: "Save Changes",
+                cancel: "Cancel Action"
+            }
+        },
+        ar: {
+            title: "مركز التحكم العالمي للمؤسسة",
+            subtitle: "الأداء العام عبر جميع الفروع",
+            stats: {
+                totalBranches: "إجمالي الفروع",
+                monthlyRevenue: "إيرادات الشهر",
+                monthlyUnits: "الوحدات المباعة (الشهر)",
+                monthlyProfit: "صافي الربح (الشهر)",
+                transactions: "إجمالي العمليات",
+                lowStock: "نواقص المخزون",
+                totalReturns: "إجمالي المرتجعات",
+                bestPerforming: "أفضل فرع أداءً"
+            },
+            menu: {
+                dashboard: "نظرة عامة",
+                branches: "التحكم في الفروع",
+                masterData: "البيانات الأساسية",
+                products: "المخزون العالمي",
+                analytics: "تحليلات الأعمال",
+                access: "صلاحيات الوصول",
+                settings: "إعدادات النظام",
+                logout: "تسجيل الخروج"
+            },
+            branches: {
+                title: "لوحة التحكم في الفروع",
+                add: "إضافة فرع جديد",
+                table: {
+                    name: "اسم الفرع",
+                    location: "الموقع",
+                    revenue: "الإيرادات",
+                    units: "الوحدات",
+                    status: "الحالة",
+                    actions: "تحكم"
+                }
+            },
+            products: {
+                title: "سجل المنتجات العالمي",
+                table: {
+                    name: "المنتج والموديل",
+                    branch: "فرع التخزين",
+                    purchase: "التكلفة",
+                    minPrice: "أقل سعر",
+                    market: "سعر السوق",
+                    stock: "المخزون",
+                    status: "حالة القفل"
+                }
+            },
+            common: {
+                egp: "ج.م",
+                units: "وحدة",
+                active: "نشط",
+                disabled: "معطل",
+                locked: "مقفل",
+                save: "حفظ التغييرات",
+                cancel: "إلغاء الإجراء"
+            }
+        }
     }
 };
 
@@ -760,23 +922,39 @@ class LanguageManager {
         return newLang;
     }
 
-    // Get translation for a specific key
+    // Get translation for a specific key (supports dot notation like category.key1.key2)
     translate(category, key) {
         try {
-            if (translations[category] &&
-                translations[category][this.currentLang] &&
-                translations[category][this.currentLang][key]) {
-                return translations[category][this.currentLang][key];
+            let cat = translations[category];
+            if (!cat) return key;
+
+            // Handle nested keys (e.g., menu.dashboard)
+            const keys = key.split('.');
+            let value = cat[this.currentLang];
+
+            for (const k of keys) {
+                if (value && value[k]) {
+                    value = value[k];
+                } else {
+                    value = null;
+                    break;
+                }
             }
 
-            // Fallback to English if current language doesn't have the translation
-            if (translations[category] &&
-                translations[category][this.fallbackLang] &&
-                translations[category][this.fallbackLang][key]) {
-                return translations[category][this.fallbackLang][key];
+            if (typeof value === 'string') return value;
+
+            // Fallback to English
+            value = cat[this.fallbackLang];
+            for (const k of keys) {
+                if (value && value[k]) {
+                    value = value[k];
+                } else {
+                    value = null;
+                    break;
+                }
             }
 
-            return key; // Return the key itself if no translation found
+            return typeof value === 'string' ? value : key;
         } catch (error) {
             console.warn('Translation error:', error);
             return key;
@@ -806,24 +984,14 @@ class LanguageManager {
         // Update all translatable elements
         document.querySelectorAll('[data-translate]').forEach(element => {
             const translateAttr = element.getAttribute('data-translate');
-            const [category, key] = translateAttr.split('.');
+            const parts = translateAttr.split('.');
+            const category = parts[0];
+            const key = parts.slice(1).join('.');
 
             if (category && key) {
                 const translation = this.translate(category, key);
-                if (translation) {
+                if (translation && typeof translation === 'string') {
                     element.textContent = translation;
-                }
-
-                // Also translate placeholders if they exist
-                if (element.hasAttribute('placeholder')) {
-                    const placeholderKey = element.getAttribute('data-translate-placeholder');
-                    if (placeholderKey) {
-                        const [pCat, pKey] = placeholderKey.split('.');
-                        const pTranslation = this.translate(pCat, pKey);
-                        if (pTranslation) {
-                            element.setAttribute('placeholder', pTranslation);
-                        }
-                    }
                 }
             }
         });
@@ -831,11 +999,13 @@ class LanguageManager {
         // Specifically handle placeholders for inputs that don't use textContent
         document.querySelectorAll('[data-translate-placeholder]').forEach(element => {
             const translateAttr = element.getAttribute('data-translate-placeholder');
-            const [category, key] = translateAttr.split('.');
+            const parts = translateAttr.split('.');
+            const category = parts[0];
+            const key = parts.slice(1).join('.');
 
             if (category && key) {
                 const translation = this.translate(category, key);
-                if (translation) {
+                if (translation && typeof translation === 'string') {
                     element.setAttribute('placeholder', translation);
                 }
             }
@@ -855,10 +1025,16 @@ class LanguageManager {
         // Update page title if available
         const titleElement = document.querySelector('title[data-translate]');
         if (titleElement) {
-            const [category, key] = titleElement.getAttribute('data-translate').split('.');
-            const translation = this.translate(category, key);
-            if (translation) {
-                document.title = translation;
+            const translateAttr = titleElement.getAttribute('data-translate');
+            const parts = translateAttr.split('.');
+            const category = parts[0];
+            const key = parts.slice(1).join('.');
+
+            if (category && key) {
+                const translation = this.translate(category, key);
+                if (translation && typeof translation === 'string') {
+                    document.title = translation;
+                }
             }
         }
     }

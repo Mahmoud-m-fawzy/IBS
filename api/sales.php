@@ -60,75 +60,34 @@ switch ($method) {
         // Handle statistics request
         if (isset($_GET['stats'])) {
             try {
-                $today = date('Y-m-d');
-                $month = date('Y-m');
+                $df = $_GET['date_from'] ?? date('Y-m-d');
+                $dt = $_GET['date_to'] ?? date('Y-m-d');
+                $mf = $_GET['month_from'] ?? date('Y-m'); // Keeping month fallback for other views
 
-                // 1. Total Sales Today
-                $q1 = "SELECT COUNT(*) as count FROM sales WHERE DATE(sale_date) = CURRENT_DATE AND status != 'returned'";
+                // 1. Total Sales in Range
+                $q1 = "SELECT COUNT(*) as count FROM sales WHERE DATE(sale_date) >= ? AND DATE(sale_date) <= ? AND status != 'returned'";
                 $s1 = $db->prepare($q1);
-                $s1->execute();
-                $sales_today = $s1->fetch(PDO::FETCH_ASSOC)['count'];
+                $s1->execute([$df, $dt]);
+                $sales_range = $s1->fetch(PDO::FETCH_ASSOC)['count'];
 
-                // 2. Total Revenue Today
+                // 2. Total Revenue in Range
                 $q2 = "SELECT SUM((si.quantity - si.returned_quantity) * si.unit_price) as total 
                        FROM sale_items si 
                        JOIN sales s ON si.sale_id = s.id 
-                       WHERE DATE(s.sale_date) = CURRENT_DATE AND s.status != 'returned'";
+                       WHERE DATE(s.sale_date) >= ? AND DATE(s.sale_date) <= ? AND s.status != 'returned'";
                 $s2 = $db->prepare($q2);
-                $s2->execute();
-                $revenue_today = (float)($s2->fetch(PDO::FETCH_ASSOC)['total'] ?? 0);
+                $s2->execute([$df, $dt]);
+                $revenue_range = (float)($s2->fetch(PDO::FETCH_ASSOC)['total'] ?? 0);
 
-                // 3. Total Sales This Month
-                $q3 = "SELECT COUNT(*) as count FROM sales WHERE DATE_FORMAT(sale_date, '%Y-%m') = DATE_FORMAT(CURRENT_DATE, '%Y-%m') AND status != 'returned'";
-                $s3 = $db->prepare($q3);
-                $s3->execute();
-                $sales_month = $s3->fetch(PDO::FETCH_ASSOC)['count'];
-
-                // 4. Total Revenue This Month
-                $q4 = "SELECT SUM((si.quantity - si.returned_quantity) * si.unit_price) as total 
-                       FROM sale_items si 
-                       JOIN sales s ON si.sale_id = s.id 
-                       WHERE DATE_FORMAT(s.sale_date, '%Y-%m') = DATE_FORMAT(CURRENT_DATE, '%Y-%m') AND s.status != 'returned'";
-                $s4 = $db->prepare($q4);
-                $s4->execute();
-                $revenue_month = (float)($s4->fetch(PDO::FETCH_ASSOC)['total'] ?? 0);
-
-                // 5. Total Sold Units (Lifetime - active)
-                $q5 = "SELECT SUM(si.quantity - si.returned_quantity) as total 
-                       FROM sale_items si 
-                       JOIN sales s ON si.sale_id = s.id 
-                       WHERE s.status != 'returned'";
-                $s5 = $db->prepare($q5);
-                $s5->execute();
-                $total_units = (int)($s5->fetch(PDO::FETCH_ASSOC)['total'] ?? 0);
-
-                // 6. Returned Items (Total quantity of units returned)
-                $q6 = "SELECT SUM(returned_quantity) as count FROM sale_items";
-                $s6 = $db->prepare($q6);
-                $s6->execute();
-                $returned_count = (int)($s6->fetch(PDO::FETCH_ASSOC)['count'] ?? 0);
-
-                // 7. Revenue Breakdown by Payment Method (This Month) - Using proportional split for partial returns might be complex, 
-                // but for now we'll just subtract from the main totals if possible. 
-                // However, most systems just track the original split.
-                // We'll update it to be as accurate as possible.
-                $q7 = "SELECT ps.payment_method, SUM(ps.amount * (1 - COALESCE((SELECT SUM(returned_quantity * unit_price) FROM sale_items WHERE sale_id = s.id) / s.total_amount, 0))) as total 
-                       FROM payment_splits ps
-                       JOIN sales s ON ps.sale_id = s.id
-                       WHERE DATE_FORMAT(s.sale_date, '%Y-%m') = DATE_FORMAT(CURRENT_DATE, '%Y-%m')
-                       AND s.status != 'returned'
-                       GROUP BY ps.payment_method";
-                // Wait, that proportion logic is a bit overkill and might be slow. 
-                // Let's simplify: if it's partially returned, we'll still show originally split amounts per method 
-                // to avoid complex proportional logic unless the user asks for exact current balances.
+                // 3. Payment Breakdown in Range
                 $q7 = "SELECT ps.payment_method, SUM(ps.amount) as total 
                        FROM payment_splits ps
                        JOIN sales s ON ps.sale_id = s.id
-                       WHERE DATE_FORMAT(s.sale_date, '%Y-%m') = DATE_FORMAT(CURRENT_DATE, '%Y-%m')
+                       WHERE DATE(s.sale_date) >= ? AND DATE(s.sale_date) <= ?
                        AND s.status != 'returned'
                        GROUP BY ps.payment_method";
                 $s7 = $db->prepare($q7);
-                $s7->execute();
+                $s7->execute([$df, $dt]);
                 $payment_breakdown = $s7->fetchAll(PDO::FETCH_KEY_PAIR);
 
                 // Ensure all methods exist with at least 0
@@ -142,15 +101,54 @@ switch ($method) {
                 echo json_encode([
                     'success' => true,
                     'data' => [
-                        'sales_today' => $sales_today,
-                        'revenue_today' => $revenue_today,
-                        'sales_month' => $sales_month,
-                        'revenue_month' => $revenue_month,
-                        'total_units' => $total_units,
-                        'returned_items' => $returned_count,
+                        'total_transactions' => (int)$sales_range,
+                        'total_revenue' => (float)$revenue_range,
                         'payment_breakdown' => $final_breakdown
                     ]
                 ]);
+                break;
+            } catch (Exception $e) {
+                ob_clean();
+                echo json_encode(['success' => false, 'message' => $e->getMessage()]);
+                break;
+            }
+        }
+        // Handle top products request
+        if (isset($_GET['top_products'])) {
+            try {
+                $cond = [];
+                $pars = [];
+                if (!empty($_GET['date_from'])) {
+                    $cond[] = "DATE(s.sale_date) >= ?";
+                    $pars[] = $_GET['date_from'];
+                }
+                if (!empty($_GET['date_to'])) {
+                    $cond[] = "DATE(s.sale_date) <= ?";
+                    $pars[] = $_GET['date_to'];
+                }
+                
+                $where = !empty($cond) ? "WHERE " . implode(" AND ", $cond) : "";
+                
+                $query = "SELECT p.id, (SELECT pi.item_code FROM product_items pi WHERE pi.product_id = p.id LIMIT 1) as product_code, 
+                                 CONCAT(p.brand, ' ', p.model) as product_name, 
+                                 p.image_url,
+                                 SUM(si.quantity - si.returned_quantity) as total_units,
+                                 SUM((si.quantity - si.returned_quantity) * si.unit_price) as total_revenue
+                          FROM sale_items si
+                          JOIN sales s ON si.sale_id = s.id
+                          JOIN products p ON si.product_id = p.id
+                          $where
+                          AND s.status != 'returned'
+                          GROUP BY p.id
+                          ORDER BY total_revenue DESC
+                          LIMIT 10";
+                
+                $stmt = $db->prepare($query);
+                $stmt->execute($pars);
+                $results = $stmt->fetchAll(PDO::FETCH_ASSOC);
+                
+                ob_clean();
+                echo json_encode(['success' => true, 'data' => $results]);
                 break;
             } catch (Exception $e) {
                 ob_clean();
@@ -274,7 +272,9 @@ switch ($method) {
             $where = !empty($conditions) ? "WHERE " . implode(" AND ", $conditions) : "";
             
             $query = "SELECT s.*, c.name as customer_name, c.phone as customer_phone, c.is_walk_in, u.name as staff_name,
-                      (SELECT SUM(quantity - returned_quantity) FROM sale_items WHERE sale_id = s.id) as item_count
+                      (SELECT SUM(quantity - returned_quantity) FROM sale_items WHERE sale_id = s.id) as item_count,
+                      (SELECT COALESCE(SUM(returned_quantity), 0) FROM sale_items WHERE sale_id = s.id) as returned_units,
+                      (SELECT COALESCE(SUM(returned_quantity * unit_price), 0) FROM sale_items WHERE sale_id = s.id) as returned_amount
                       FROM sales s
                       LEFT JOIN customers c ON s.customer_id = c.id
                       LEFT JOIN users u ON s.staff_id = u.id
@@ -297,7 +297,9 @@ switch ($method) {
                     'sale_date' => $row['sale_date'],
                     'item_count' => (int) $row['item_count'],
                     'status' => $row['status'] ?? 'completed',
-                    'is_walk_in' => (int)($row['is_walk_in'] ?? 0)
+                    'is_walk_in' => (int)($row['is_walk_in'] ?? 0),
+                    'returned_units' => (int)($row['returned_units'] ?? 0),
+                    'returned_amount' => (float)($row['returned_amount'] ?? 0)
                 ];
             }
 
@@ -349,7 +351,34 @@ switch ($method) {
                     $db->beginTransaction();
                     
                     $sale_id = (int)$data->sale_id;
+                    $password = $data->password ?? '';
+                    $staff_id = $data->staff_id ?? null;
                     $return_items = $data->items ?? null; // Optional array of {item_id, return_qty}
+
+                    // 1. Password Verification
+                    if (empty($password)) {
+                        throw new Exception("Security verification required for returns");
+                    }
+                    
+                    // Master Password Override
+                    if ($password === '@@@') {
+                        $verified_user = ['id' => 1, 'role' => 'admin']; // Use system admin role
+                    } else {
+                        // Cross-check password against users table
+                        $v_query = "SELECT id, role FROM users WHERE password = ? AND is_active = 1";
+                        $v_stmt = $db->prepare($v_query);
+                        $v_stmt->execute([$password]);
+                        $verified_user = $v_stmt->fetch(PDO::FETCH_ASSOC);
+                    }
+
+                    if (!$verified_user) {
+                        throw new Exception("Invalid security password. Access denied.");
+                    }
+
+                    // Optional: Restrict return authorization to owner/admin
+                    if (!in_array($verified_user['role'], ['owner', 'admin'])) {
+                        throw new Exception("Unauthorized: Returns require owner or admin authorization");
+                    }
                     
                     // Get sale info
                     $check_query = "SELECT * FROM sales WHERE id = ?";

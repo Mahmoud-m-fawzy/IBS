@@ -36,16 +36,40 @@ try {
     $method = $_SERVER['REQUEST_METHOD'];
 
     switch ($method) {
-        case 'GET':
-            $query = "SELECT id, name, description FROM categories WHERE is_active = 1 ORDER BY name ASC";
-            $stmt = $db->prepare($query);
-            $stmt->execute();
-            $categories = $stmt->fetchAll(PDO::FETCH_ASSOC);
-            
-            echo json_encode([
-                'success' => true,
-                'data' => $categories
-            ]);
+        case 'POST':
+            $data = json_decode(file_get_contents("php://input"));
+            if (!empty($data->name)) {
+                $query = "INSERT INTO categories (name, description) VALUES (?, ?)";
+                $stmt = $db->prepare($query);
+                if ($stmt->execute([$data->name, $data->description ?? ''])) {
+                    echo json_encode(['success' => true, 'message' => 'Category added', 'id' => $db->lastInsertId()]);
+                } else {
+                    echo json_encode(['success' => false, 'message' => 'Failed to add category']);
+                }
+            }
+            break;
+
+        case 'PUT':
+            $data = json_decode(file_get_contents("php://input"));
+            if (!empty($data->id) && !empty($data->name)) {
+                $query = "UPDATE categories SET name = ?, description = ? WHERE id = ?";
+                $stmt = $db->prepare($query);
+                if ($stmt->execute([$data->name, $data->description ?? '', $data->id])) {
+                    echo json_encode(['success' => true, 'message' => 'Category updated']);
+                } else {
+                    echo json_encode(['success' => false, 'message' => 'Failed to update category']);
+                }
+            }
+            break;
+
+        case 'DELETE':
+            if (isset($_GET['id'])) {
+                $query = "UPDATE categories SET is_active = 0 WHERE id = ?";
+                $stmt = $db->prepare($query);
+                if ($stmt->execute([$_GET['id']])) {
+                    echo json_encode(['success' => true, 'message' => 'Category deleted']);
+                }
+            }
             break;
 
         default:

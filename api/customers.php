@@ -99,7 +99,7 @@ switch($method) {
         
         // Create new customer if phone doesn't exist or if phone is empty but name is provided
         if (!empty($data->name)) {
-            $query = "INSERT INTO customers (name, phone, email, address, total_purchases) VALUES (?, ?, ?, ?, ?, ?)";
+            $query = "INSERT INTO customers (name, phone, email, address, total_purchases) VALUES (?, ?, ?, ?, ?)";
             $stmt = $db->prepare($query);
             $stmt->bindParam(1, $data->name);
             $stmt->bindParam(2, $data->phone ?? null);
