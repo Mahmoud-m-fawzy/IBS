@@ -87,6 +87,9 @@ switch ($method) {
 
         $price = intval(round(floatval($data['price']) * 100));
         $description = trim($data['description']);
+        $expense_type = isset($data['expense_type']) ? $data['expense_type'] : 'general';
+        $product_id = isset($data['product_id']) ? intval($data['product_id']) : 0;
+        $quantity = isset($data['quantity']) ? intval($data['quantity']) : 0;
 
         if ($price <= 0) {
             logPaymentAttempt('CREATE_PAYMENT', false, 'Invalid price: ' . $price);
@@ -102,13 +105,55 @@ switch ($method) {
             exit;
         }
 
+        if ($expense_type === 'damage' && ($product_id <= 0 || $quantity <= 0)) {
+            logPaymentAttempt('CREATE_PAYMENT', false, 'Invalid damage data');
+            http_response_code(400);
+            echo json_encode(['success' => false, 'message' => 'Valid product and quantity required for damage']);
+            exit;
+        }
+
         try {
+            $db->beginTransaction();
+
+            if ($expense_type === 'damage') {
+                // Verify product exists and has enough stock
+                $stmt = $db->prepare("SELECT quantity FROM products WHERE id = ? FOR UPDATE");
+                $stmt->execute([$product_id]);
+                $prod = $stmt->fetch(PDO::FETCH_ASSOC);
+
+                if (!$prod) {
+                    throw new Exception('Product not found');
+                }
+                
+                if ($prod['quantity'] < $quantity) {
+                    throw new Exception('Insufficient stock for product. Available: ' . $prod['quantity']);
+                }
+
+                // Deduct stock
+                $stmt = $db->prepare("UPDATE products SET quantity = quantity - ? WHERE id = ?");
+                $stmt->execute([$quantity, $product_id]);
+
+                // Update product_items
+                $stmt = $db->prepare("UPDATE product_items SET status = 'damaged' WHERE product_id = ? AND status = 'available' LIMIT ?");
+                $stmt->bindValue(1, $product_id, PDO::PARAM_INT);
+                $stmt->bindValue(2, $quantity, PDO::PARAM_INT);
+                $stmt->execute();
+            }
+
             $query = "INSERT INTO payment_entries (price, description, created_by) VALUES (?, ?, ?)";
             $stmt = $db->prepare($query);
             $result = $stmt->execute([$price, $description, $_SESSION['user_id']]);
 
             if ($result) {
                 $newId = $db->lastInsertId();
+
+                if ($expense_type === 'damage') {
+                    // Log stock movement
+                    $stmt = $db->prepare("INSERT INTO stock_movements (product_id, movement_type, quantity, reference_type, reference_id, created_by) VALUES (?, 'out', ?, 'damage', ?, ?)");
+                    $stmt->execute([$product_id, $quantity, $newId, $_SESSION['user_id']]);
+                }
+
+                $db->commit();
                 logPaymentAttempt('CREATE_PAYMENT', true, 'ID: ' . $newId . ', Price: ' . ($price/100));
                 echo json_encode([
                     'success' => true,
@@ -116,11 +161,13 @@ switch ($method) {
                     'payment_id' => $newId
                 ]);
             } else {
+                $db->rollBack();
                 logPaymentAttempt('CREATE_PAYMENT', false, 'Database insert failed');
                 http_response_code(500);
                 echo json_encode(['success' => false, 'message' => 'Failed to add payment entry']);
             }
         } catch (Exception $e) {
+            $db->rollBack();
             logPaymentAttempt('CREATE_PAYMENT', false, 'Database error: ' . $e->getMessage());
             http_response_code(500);
             echo json_encode(['success' => false, 'message' => 'Error adding payment entry: ' . $e->getMessage()]);

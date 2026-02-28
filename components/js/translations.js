@@ -597,7 +597,14 @@ const translations = {
             providePaymentDetails: "Provide details about this expense",
             delete: "Delete",
             confirmDelete: "Are you sure you want to delete this expense entry?",
-            print: "Print Receipt"
+            print: "Print Receipt",
+            expenseType: "Expense Type",
+            generalExpense: "General Expense",
+            productDamage: "Product Damage",
+            product: "Product",
+            quantity: "Quantity",
+            searchProduct: "Search product...",
+            addDamage: "Add Damage"
         },
         ar: {
             title: "المصروفات التشغيلية",
@@ -610,12 +617,19 @@ const translations = {
             totalPayments: "إجمالي المصروفات",
             addPaymentEntry: "إضافة مصروفات",
             enterPaymentAmount: "أدخل المبلغ",
-            describePayment: "صف المصروفات...",
+            describePayment: "صف المصروف...",
             amountGreaterThanZero: "يجب أن يكون المبلغ أكبر من صفر",
             providePaymentDetails: "قدم تفاصيل حول هذه المصروفات",
             delete: "حذف",
             confirmDelete: "هل أنت متأكد من حذف هذه المصروفات؟",
-            print: "طباعة إيصال"
+            print: "طباعة إيصال",
+            expenseType: "نوع المصروف",
+            generalExpense: "مصروف عام",
+            productDamage: "هالك منتجات",
+            product: "المنتج",
+            quantity: "الكمية",
+            searchProduct: "ابحث عن منتج...",
+            addDamage: "إضافة هالك"
         }
     },
 
@@ -653,7 +667,13 @@ const translations = {
             phonePlaceholder: "Phone number...",
             emailPlaceholder: "Email address...",
             addressPlaceholder: "Address...",
-            searchResults: "Search Results"
+            searchResults: "Search Results",
+            sendMessage: "Send Message to All Customers",
+            writeMessage: "Write your message for all customers...",
+            sendSms: "🚀 Send via Twilio",
+            smsSent: "Messages sent successfully! 🎉",
+            smsError: "Failed to send some messages.",
+            smsPartial: "Some messages failed to send. Please check audit logs."
         },
         ar: {
             title: "علامة تبويب العملاء",
@@ -687,7 +707,13 @@ const translations = {
             phonePlaceholder: "رقم الهاتف...",
             emailPlaceholder: "البريد الإلكتروني...",
             addressPlaceholder: "العنوان...",
-            searchResults: "نتائج البحث"
+            searchResults: "نتائج البحث",
+            sendMessage: "إرسال رسالة لجميع العملاء",
+            writeMessage: "اكتب رسالتك لجميع العملاء...",
+            sendSms: "🚀 إرسال عبر Twilio",
+            smsSent: "تم إرسال الرسائل بنجاح! 🎉",
+            smsError: "فشل إرسال بعض الرسائل.",
+            smsPartial: "فشل إرسال بعض الرسائل. يرجى مراجعة سجلات التدقيق."
         }
     },
 
@@ -833,7 +859,19 @@ const translations = {
                 disabled: "Disabled",
                 locked: "Locked",
                 save: "Save Changes",
-                cancel: "Cancel Action"
+                cancel: "Cancel Action",
+                add: "Add New"
+            },
+            masterData: {
+                title: "Master Data Management",
+                categories: "Categories",
+                brands: "Brands",
+                suppliers: "Suppliers",
+                addNew: "Add New Entity"
+            },
+            accessControl: {
+                title: "Access Control",
+                createAdmin: "Create New Admin"
             }
         },
         ar: {
@@ -890,7 +928,19 @@ const translations = {
                 disabled: "معطل",
                 locked: "مقفل",
                 save: "حفظ التغييرات",
-                cancel: "إلغاء الإجراء"
+                cancel: "إلغاء الإجراء",
+                add: "إضافة جديد"
+            },
+            masterData: {
+                title: "إدارة البيانات الأساسية",
+                categories: "الفئات",
+                brands: "العلامات التجارية",
+                suppliers: "الموردين",
+                addNew: "إضافة كيان جديد"
+            },
+            accessControl: {
+                title: "صلاحيات الوصول",
+                createAdmin: "إنشاء مدير جديد"
             }
         }
     }

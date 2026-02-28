@@ -36,6 +36,14 @@ try {
     $method = $_SERVER['REQUEST_METHOD'];
 
     switch ($method) {
+        case 'GET':
+            $query = "SELECT * FROM categories WHERE is_active = 1 ORDER BY name ASC";
+            $stmt = $db->prepare($query);
+            $stmt->execute();
+            $categories = $stmt->fetchAll(PDO::FETCH_ASSOC);
+            echo json_encode(['success' => true, 'data' => $categories]);
+            break;
+
         case 'POST':
             $data = json_decode(file_get_contents("php://input"));
             if (!empty($data->name)) {

@@ -4,6 +4,14 @@ ini_set('display_errors', 1);
 
 session_start();
 
+// Handle logout fallback
+if (isset($_GET['logout'])) {
+    session_destroy();
+    session_start();
+    header('Location: index.php');
+    exit();
+}
+
 // Handle login
 if ($_POST && isset($_POST['login'])) {
     $username = $_POST['username'];

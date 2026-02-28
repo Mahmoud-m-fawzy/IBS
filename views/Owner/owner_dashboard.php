@@ -468,7 +468,7 @@ $theme_accent = $settings['theme_accent'] ?? '#667eea';
             </div>
 
             <div class="sidebar-footer">
-                <a href="index.php?logout=true" class="menu-item" style="color: var(--accent-danger);">
+                <a href="logout.php" class="nav-link" style="color: var(--accent-danger);">
                     <i class="fas fa-sign-out-alt"></i> Logout
                 </a>
             </div>

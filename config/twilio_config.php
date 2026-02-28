@@ -1,9 +1,9 @@
 <?php
 // Twilio Configuration - Updated for WhatsApp
-define('TWILIO_ACCOUNT_SID', 'YOUR_ACCOUNT_SID');
-define('TWILIO_AUTH_TOKEN', 'YOUR_AUTH_TOKEN');
+define('TWILIO_ACCOUNT_SID', 'your_account_sid_here');
+define('TWILIO_AUTH_TOKEN', 'your_auth_token_here');
 define('TWILIO_WHATSAPP_FROM', 'whatsapp:+14155238886');
 
-// Set to false for live WhatsApp sending
+// Set to true to test UI without sending real messages
 define('TWILIO_SIMULATION', false); 
 ?>

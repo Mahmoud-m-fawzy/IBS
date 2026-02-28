@@ -209,26 +209,23 @@ $company_name = $settings['company_name'] ?? 'IBS Store';
             </div>
 
             <nav class="nav-list">
-                <a class="nav-link active" onclick="switchTab('dashboard', this)" data-translate="owner.menu.dashboard">
-                    <i class="fas fa-grid-2"></i> Overview
+                <a class="nav-link active" onclick="switchTab('dashboard', this)">
+                    <i class="fas fa-grid-2"></i> <span data-translate="owner.menu.dashboard">Overview</span>
                 </a>
-                <a class="nav-link" onclick="switchTab('branches', this)" data-translate="owner.menu.branches">
-                    <i class="fas fa-building-circle-check"></i> Branch Control
+                <a class="nav-link" onclick="switchTab('branches', this)">
+                    <i class="fas fa-building-circle-check"></i> <span data-translate="owner.menu.branches">Branch Control</span>
                 </a>
-                <a class="nav-link" onclick="switchTab('master', this)" data-translate="owner.menu.masterData">
-                    <i class="fas fa-database"></i> Master Data
+                <a class="nav-link" onclick="switchTab('master', this)">
+                    <i class="fas fa-database"></i> <span data-translate="owner.menu.masterData">Master Data</span>
                 </a>
-                <a class="nav-link" onclick="switchTab('products', this)" data-translate="owner.menu.products">
-                    <i class="fas fa-boxes-stacked"></i> Global Stock
+                <a class="nav-link" onclick="switchTab('products', this)">
+                    <i class="fas fa-boxes-stacked"></i> <span data-translate="owner.menu.products">Global Stock</span>
                 </a>
-                <a class="nav-link" onclick="switchTab('analytics', this)" data-translate="owner.menu.analytics">
-                    <i class="fas fa-chart-mixed"></i> BI Analytics
+                <a class="nav-link" onclick="switchTab('analytics', this)">
+                    <i class="fas fa-chart-mixed"></i> <span data-translate="owner.menu.analytics">BI Analytics</span>
                 </a>
-                <a class="nav-link" onclick="switchTab('access', this)" data-translate="owner.menu.access">
-                    <i class="fas fa-user-shield"></i> Access Control
-                </a>
-                <a class="nav-link" onclick="switchTab('settings', this)" data-translate="owner.menu.settings">
-                    <i class="fas fa-sliders"></i> System Config
+                <a class="nav-link" onclick="switchTab('access', this)">
+                    <i class="fas fa-user-shield"></i> <span data-translate="owner.menu.access">Access Control</span>
                 </a>
             </nav>
 
@@ -243,7 +240,7 @@ $company_name = $settings['company_name'] ?? 'IBS Store';
             </div>
 
             <div style="padding: 20px; border-top: 1px solid rgba(255,255,255,0.1);">
-                <a href="?logout=true" class="nav-link" style="color: #fca5a5; margin: 0;">
+                <a href="logout.php" class="nav-link" style="color: #fca5a5; margin: 0;">
                     <i class="fas fa-power-off"></i> <span data-translate="owner.menu.logout">Logout</span>
                 </a>
             </div>
@@ -261,10 +258,10 @@ $company_name = $settings['company_name'] ?? 'IBS Store';
                         <option value="all">All Global Branches</option>
                     </select>
                     <div style="display: flex; align-items: center; gap: 12px; padding: 10px 20px; background: rgba(255,255,255,0.15); border-radius: 14px; backdrop-filter: blur(10px);">
-                        <div style="width: 32px; height: 32px; border-radius: 50%; background: white; color: var(--primary-blue); display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 14px;">
-                            <?php echo strtoupper(substr($_SESSION['name'], 0, 1)); ?>
+                        <div style="width: 32px; height: 32px; border-radius: 50%; background: white; color: #1e293b; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 14px;">
+                            <?php echo strtoupper(substr($_SESSION['name'] ?? 'U', 0, 1)); ?>
                         </div>
-                        <span style="font-size: 14px; font-weight: 700; color: white;"><?php echo htmlspecialchars($_SESSION['name']); ?></span>
+                        <span style="font-size: 14px; font-weight: 700; color: white;"><?php echo htmlspecialchars($_SESSION['name'] ?? 'User'); ?></span>
                     </div>
                 </div>
             </header>
@@ -323,7 +320,7 @@ $company_name = $settings['company_name'] ?? 'IBS Store';
                 <div class="card-table">
                     <div class="table-head">
                         <h3 data-translate="owner.branches.title" style="margin: 0; font-size: 20px; font-weight: 800;">Branch Control Panel</h3>
-                        <button class="btn" style="padding: 10px 24px; margin: 0;" data-translate="owner.branches.add">
+                        <button class="btn" style="padding: 10px 24px; margin: 0;" data-translate="owner.branches.add" onclick="openBranchModal()">
                             <i class="fas fa-plus"></i> Add Branch
                         </button>
                     </div>
@@ -348,14 +345,14 @@ $company_name = $settings['company_name'] ?? 'IBS Store';
                 <div class="card-table">
                     <div class="table-head">
                         <h3 data-translate="owner.masterData.title" style="margin: 0; font-size: 20px; font-weight: 800;">Entity Management</h3>
-                        <button class="action-btn" style="width: 140px; gap: 8px; font-weight: 700; border-radius: 12px;" onclick="openMasterModal()">
+                        <button class="action-btn" style="width: 140px; gap: 8px; font-weight: 700; border-radius: 12px;" onclick="openMasterModal()" data-translate="owner.common.add">
                             <i class="fas fa-plus"></i> Add New
                         </button>
                     </div>
                     <div class="master-tabs">
-                        <div class="master-tab active" onclick="selectMaster('categories', this)">Categories</div>
-                        <div class="master-tab" onclick="selectMaster('brands', this)">Brands</div>
-                        <div class="master-tab" onclick="selectMaster('suppliers', this)">Suppliers</div>
+                        <div class="master-tab active" onclick="selectMaster('categories', this)" data-translate="owner.masterData.categories">Categories</div>
+                        <div class="master-tab" onclick="selectMaster('brands', this)" data-translate="owner.masterData.brands">Brands</div>
+                        <div class="master-tab" onclick="selectMaster('suppliers', this)" data-translate="owner.masterData.suppliers">Suppliers</div>
                     </div>
                     <table>
                         <thead id="master-thead"></thead>
@@ -387,12 +384,26 @@ $company_name = $settings['company_name'] ?? 'IBS Store';
                 </div>
             </div>
 
+            <!-- Analytics -->
+            <div id="tab-analytics" class="tab-pane">
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px;">
+                    <div class="card-table" style="padding: 30px;">
+                        <h3 style="margin: 0 0 25px 0; font-size: 18px; font-weight: 700;">Revenue by Branch</h3>
+                        <canvas id="branchRevenueChart"></canvas>
+                    </div>
+                    <div class="card-table" style="padding: 30px;">
+                        <h3 style="margin: 0 0 25px 0; font-size: 18px; font-weight: 700;">Top 10 Products</h3>
+                        <canvas id="topProductsChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
             <!-- Access Control -->
             <div id="tab-access" class="tab-pane">
                 <div class="card-table">
                     <div class="table-head">
-                        <h3 style="margin: 0; font-size: 20px; font-weight: 800;">System Users & Permissions</h3>
-                        <button class="btn" style="padding: 10px 24px; margin: 0;" onclick="openUserModal()">
+                        <h3 data-translate="owner.accessControl.title" style="margin: 0; font-size: 20px; font-weight: 800;">System Users & Permissions</h3>
+                        <button class="btn" style="padding: 10px 24px; margin: 0;" onclick="openUserModal()" data-translate="owner.accessControl.createAdmin">
                             <i class="fas fa-user-plus"></i> Create Admin
                         </button>
                     </div>
@@ -410,41 +421,77 @@ $company_name = $settings['company_name'] ?? 'IBS Store';
                     </table>
                 </div>
             </div>
-
-            <!-- System Settings -->
-            <div id="tab-settings" class="tab-pane">
-                <div class="card-table" style="max-width: 800px; padding: 40px;">
-                    <h3 style="margin: 0 0 30px 0; font-size: 24px; font-weight: 800;">Global Preferences</h3>
-                    <form id="global-settings-form" style="display: grid; gap: 20px;">
-                        <div class="form-group" style="padding: 0; margin: 0;">
-                            <label style="margin-bottom: 10px; display: block;">Company Display Name</label>
-                            <input type="text" name="company_name" style="width: 100%; max-width: none;" value="<?php echo htmlspecialchars($company_name); ?>">
-                        </div>
-                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
-                            <div class="form-group" style="padding: 0; margin: 0;">
-                                <label style="margin-bottom: 10px; display: block;">Currency Symbol</label>
-                                <input type="text" name="currency" style="width: 100%; max-width: none;" value="<?php echo htmlspecialchars($settings['currency'] ?? 'EGP'); ?>">
-                            </div>
-                            <div class="form-group" style="padding: 0; margin: 0;">
-                                <label style="margin-bottom: 10px; display: block;">Tax Rate (%)</label>
-                                <input type="number" name="tax_rate" style="width: 100%; max-width: none;" value="<?php echo htmlspecialchars($settings['tax_rate'] ?? '0'); ?>">
-                            </div>
-                        </div>
-                        <div class="form-group" style="padding: 0; margin: 0;">
-                            <label style="margin-bottom: 10px; display: block;">Invoicing Policy</label>
-                            <textarea name="invoice_footer" style="width: 100%; max-width: none; height: 100px;"><?php echo htmlspecialchars($settings['invoice_footer'] ?? ''); ?></textarea>
-                        </div>
-                        <button type="submit" class="btn" style="padding: 18px; width: 100%; margin: 20px 0 0 0; font-size: 16px;">
-                            Update Global Configuration
-                        </button>
-                    </form>
-                </div>
-            </div>
         </main>
+    </div>
+
+    <!-- Modals -->
+    <!-- Branch Modal -->
+    <div id="branchModal" style="display: none; position: fixed; z-index: 2000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); align-items: center; justify-content: center;">
+        <div style="background: white; padding: 40px; border-radius: 20px; width: 500px; box-shadow: 0 20px 40px rgba(0,0,0,0.2);">
+            <h2 id="branchModalTitle">Add New Branch</h2>
+            <form id="branchForm" onsubmit="saveBranch(event)">
+                <input type="hidden" id="branchId">
+                <div style="display: grid; gap: 15px; margin-bottom: 20px;">
+                    <div class="form-group"><label>Branch Name</label><input type="text" id="branchName" required style="width: 100%;"></div>
+                    <div class="form-group"><label>Location</label><input type="text" id="branchLocation" required style="width: 100%;"></div>
+                    <div class="form-group"><label>Phone</label><input type="text" id="branchPhone" style="width: 100%;"></div>
+                    <div class="form-group"><label>Email</label><input type="email" id="branchEmail" style="width: 100%;"></div>
+                </div>
+                <div style="display: flex; gap: 10px; justify-content: flex-end;">
+                    <button type="button" class="btn" style="background: #e2e8f0; color: #64748b;" onclick="closeModal('branchModal')">Cancel</button>
+                    <button type="submit" class="btn">Save Branch</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Master Data Modal -->
+    <div id="masterModal" style="display: none; position: fixed; z-index: 2000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); align-items: center; justify-content: center;">
+        <div style="background: white; padding: 40px; border-radius: 20px; width: 500px; box-shadow: 0 20px 40px rgba(0,0,0,0.2);">
+            <h2 id="masterModalTitle" data-translate="owner.masterData.addNew">Add New Entity</h2>
+            <form id="masterForm" onsubmit="saveMaster(event)">
+                <div style="display: grid; gap: 15px; margin-bottom: 20px;">
+                    <div class="form-group"><label>Name</label><input type="text" id="masterName" required style="width: 100%;"></div>
+                    <div id="masterExtraFields"></div>
+                </div>
+                <div style="display: flex; gap: 10px; justify-content: flex-end;">
+                    <button type="button" class="btn" style="background: #e2e8f0; color: #64748b;" onclick="closeModal('masterModal')">Cancel</button>
+                    <button type="submit" class="btn">Save Entity</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- User Modal -->
+    <div id="userModal" style="display: none; position: fixed; z-index: 2000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); align-items: center; justify-content: center;">
+        <div style="background: white; padding: 40px; border-radius: 20px; width: 500px; box-shadow: 0 20px 40px rgba(0,0,0,0.2);">
+            <h2 id="userModalTitle">Create New Account</h2>
+            <form id="userForm" onsubmit="saveUser(event)">
+                <input type="hidden" id="userId">
+                <div style="display: grid; gap: 15px; margin-bottom: 20px;">
+                    <div class="form-group"><label>Full Name</label><input type="text" id="userName" required style="width: 100%;"></div>
+                    <div class="form-group"><label>Username</label><input type="text" id="userUsername" required style="width: 100%;"></div>
+                    <div class="form-group"><label>Password</label><input type="password" id="userPassword" style="width: 100%;"></div>
+                    <div class="form-group"><label>Role</label>
+                        <select id="userRole" required style="width: 100%;">
+                            <option value="admin">Admin</option>
+                            <option value="staff">Staff</option>
+                            <option value="owner">Owner</option>
+                        </select>
+                    </div>
+                </div>
+                <div style="display: flex; gap: 10px; justify-content: flex-end;">
+                    <button type="button" class="btn" style="background: #e2e8f0; color: #64748b;" onclick="closeModal('userModal')">Cancel</button>
+                    <button type="submit" class="btn">Create Account</button>
+                </div>
+            </form>
+        </div>
     </div>
 
     <script src="components/js/translations.js"></script>
     <script>
+        let currentMasterType = 'categories';
+        
         // Tab Management
         function switchTab(tab, el) {
             document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
@@ -456,8 +503,9 @@ $company_name = $settings['company_name'] ?? 'IBS Store';
             if(tab === 'dashboard') loadStats();
             if(tab === 'branches') loadBranches();
             if(tab === 'products') loadProducts();
-            if(tab === 'master') selectMaster('categories');
+            if(tab === 'master') selectMaster(currentMasterType);
             if(tab === 'access') loadUsers();
+            if(tab === 'analytics') renderAnalyticsCharts();
         }
 
         // Language Dongle
@@ -476,6 +524,123 @@ $company_name = $settings['company_name'] ?? 'IBS Store';
             document.querySelector('.lang-icon').innerText = lang === 'en' ? '🌐' : '🇪🇬';
         }
 
+        // Modals Logic
+        function openBranchModal(data = null) {
+            document.getElementById('branchModalTitle').innerText = data ? 'Edit Branch' : 'Add New Branch';
+            document.getElementById('branchId').value = data ? data.id : '';
+            document.getElementById('branchName').value = data ? data.name : '';
+            document.getElementById('branchLocation').value = data ? data.location : '';
+            document.getElementById('branchPhone').value = data ? data.phone : '';
+            document.getElementById('branchEmail').value = data ? data.email : '';
+            document.getElementById('branchModal').style.display = 'flex';
+        }
+
+        function openUserModal(data = null) {
+            document.getElementById('userModalTitle').innerText = data ? 'Edit Account' : 'Create New Account';
+            document.getElementById('userId').value = data ? data.id : '';
+            document.getElementById('userName').value = data ? data.name : '';
+            document.getElementById('userUsername').value = data ? data.username : '';
+            document.getElementById('userUsername').disabled = !!data;
+            document.getElementById('userPassword').value = '';
+            document.getElementById('userRole').value = data ? data.role : 'admin';
+            document.getElementById('userModal').style.display = 'flex';
+        }
+
+        function openMasterModal() {
+            document.getElementById('masterName').value = '';
+            const extra = document.getElementById('masterExtraFields');
+            extra.innerHTML = '';
+            
+            if(currentMasterType === 'brands') {
+                extra.innerHTML = '<div class="form-group"><label>Contact Info</label><input type="text" id="brandContact" style="width: 100%;"></div>';
+            } else if(currentMasterType === 'suppliers') {
+                extra.innerHTML = `
+                    <div class="form-group"><label>Contact Person</label><input type="text" id="supPerson" style="width: 100%;"></div>
+                    <div class="form-group"><label>Phone</label><input type="text" id="supPhone" style="width: 100%;"></div>
+                `;
+            } else if(currentMasterType === 'categories') {
+                extra.innerHTML = '<div class="form-group"><label>Description</label><input type="text" id="catDesc" style="width: 100%;"></div>';
+            }
+            
+            document.getElementById('masterModal').style.display = 'flex';
+        }
+
+        function closeModal(id) {
+            document.getElementById(id).style.display = 'none';
+        }
+
+        async function saveBranch(e) {
+            e.preventDefault();
+            const id = document.getElementById('branchId').value;
+            const data = {
+                id: id,
+                name: document.getElementById('branchName').value,
+                location: document.getElementById('branchLocation').value,
+                phone: document.getElementById('branchPhone').value,
+                email: document.getElementById('branchEmail').value,
+                is_active: 1
+            };
+            const method = id ? 'PUT' : 'POST';
+            const res = await fetch('api/owner_branches.php', {
+                method: method,
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify(data)
+            });
+            const result = await res.json();
+            if(result.success) {
+                closeModal('branchModal');
+                loadBranches();
+            } else alert(result.message);
+        }
+
+        async function saveUser(e) {
+            e.preventDefault();
+            const id = document.getElementById('userId').value;
+            const data = {
+                id: id,
+                name: document.getElementById('userName').value,
+                username: document.getElementById('userUsername').value,
+                role: document.getElementById('userRole').value,
+                is_active: 1
+            };
+            const pwd = document.getElementById('userPassword').value;
+            if(pwd) data.password = pwd;
+            
+            const method = id ? 'PUT' : 'POST';
+            const res = await fetch('api/users.php', {
+                method: method,
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify(data)
+            });
+            const result = await res.json();
+            if(result.success) {
+                closeModal('userModal');
+                loadUsers();
+            } else alert(result.message);
+        }
+
+        async function saveMaster(e) {
+            e.preventDefault();
+            const data = { name: document.getElementById('masterName').value };
+            if(currentMasterType === 'brands') data.contact_info = document.getElementById('brandContact').value;
+            if(currentMasterType === 'suppliers') {
+                data.contact_person = document.getElementById('supPerson').value;
+                data.phone = document.getElementById('supPhone').value;
+            }
+            if(currentMasterType === 'categories') data.description = document.getElementById('catDesc').value;
+
+            const res = await fetch(`api/${currentMasterType}.php`, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify(data)
+            });
+            const result = await res.json();
+            if(result.success) {
+                closeModal('masterModal');
+                selectMaster(currentMasterType);
+            } else alert(result.message);
+        }
+
         // Data Loaders
         async function loadStats() {
             const branchId = document.getElementById('branch-filter').value;
@@ -484,13 +649,24 @@ $company_name = $settings['company_name'] ?? 'IBS Store';
                 const { success, data } = await res.json();
                 if(success) {
                     document.getElementById('stat-branches').innerText = data.total_branches;
-                    document.getElementById('stat-revenue').innerText = data.total_revenue.toLocaleString();
-                    document.getElementById('stat-units').innerText = data.total_units_sold.toLocaleString();
-                    document.getElementById('stat-profit').innerText = data.net_profit.toLocaleString();
+                    document.getElementById('stat-revenue').innerText = parseFloat(data.total_revenue).toLocaleString();
+                    document.getElementById('stat-units').innerText = parseInt(data.total_units_sold).toLocaleString();
+                    document.getElementById('stat-profit').innerText = parseFloat(data.net_profit).toLocaleString();
                     document.getElementById('stat-trans').innerText = data.total_transactions;
                     document.getElementById('stat-low').innerText = data.low_stock_products;
                     document.getElementById('stat-returns').innerText = data.total_returns;
-                    document.getElementById('stat-best').innerText = data.best_branch;
+                    document.getElementById('stat-best').innerText = data.best_branch || '-';
+                    
+                    // Update branch filter if it's the first load
+                    const filter = document.getElementById('branch-filter');
+                    if(filter.options.length === 1 && data.branches) {
+                        data.branches.forEach(b => {
+                            const opt = document.createElement('option');
+                            opt.value = b.id;
+                            opt.textContent = b.name;
+                            filter.appendChild(opt);
+                        });
+                    }
                 }
             } catch (e) {}
             renderCharts();
@@ -510,12 +686,16 @@ $company_name = $settings['company_name'] ?? 'IBS Store';
                         <td>${b.units_sold}</td>
                         <td><span class="badge ${b.is_active ? 'b-safe' : 'b-warn'}">${b.is_active ? 'Active' : 'Offline'}</span></td>
                         <td>
-                            <button class="action-btn"><i class="fas fa-eye"></i></button>
-                            <button class="action-btn"><i class="fas fa-cog"></i></button>
+                            <button class="action-btn" onclick="viewBranch(${b.id})"><i class="fas fa-eye"></i></button>
+                            <button class="action-btn" onclick='openBranchModal(${JSON.stringify(b).replace(/'/g, "&apos;")})'><i class="fas fa-cog"></i></button>
                         </td>
                     </tr>
                 `;
             });
+        }
+
+        function viewBranch(id) {
+            window.location.href = `admin_dashboard.php?branch_id=${id}`;
         }
 
         async function loadProducts() {
@@ -526,11 +706,11 @@ $company_name = $settings['company_name'] ?? 'IBS Store';
             data.forEach(p => {
                 list.innerHTML += `
                     <tr>
-                        <td><strong>${p.model}</strong><br><small style="color: #64748b">${p.brand_name}</small></td>
+                        <td><strong>${p.model}</strong><br><small style="color: #64748b">${p.brand_name || p.brand}</small></td>
                         <td><span class="badge" style="background: #f1f5f9; color: #64748b">${p.branch_name || 'HEAD OFFICE'}</span></td>
                         <td>${parseFloat(p.purchase_price).toLocaleString()}</td>
                         <td>${parseFloat(p.min_selling_price).toLocaleString()}</td>
-                        <td style="color: var(--primary-blue); font-weight: 800;">${parseFloat(p.suggested_price).toLocaleString()}</td>
+                        <td style="color: #3b82f6; font-weight: 800;">${parseFloat(p.suggested_price).toLocaleString()}</td>
                         <td><strong style="color: ${p.quantity <= p.min_stock ? '#ef4444' : '#10b981'}">${p.quantity}</strong></td>
                         <td><i class="fas ${p.is_active ? 'fa-unlock' : 'fa-lock'}" style="color: ${p.is_active ? '#10b981' : '#ef4444'}"></i></td>
                     </tr>
@@ -550,70 +730,123 @@ $company_name = $settings['company_name'] ?? 'IBS Store';
                         <td><span class="badge" style="background:#e0e7ff; color:#4338ca">${u.role}</span></td>
                         <td>${u.phone || '-'}</td>
                         <td><span class="badge ${u.is_active ? 'b-safe' : 'b-warn'}">${u.is_active ? 'Active' : 'Locked'}</span></td>
-                        <td><button class="action-btn"><i class="fas fa-edit"></i></button></td>
+                        <td><button class="action-btn" onclick='openUserModal(${JSON.stringify(u).replace(/'/g, "&apos;")})'><i class="fas fa-edit"></i></button></td>
                     </tr>
                 `;
             });
         }
 
-        async function selectMaster(type, el) {
-            document.querySelectorAll('.master-tab').forEach(t => t.classList.remove('active'));
-            el.classList.add('active');
+        async function selectMaster(type, el = null) {
+            currentMasterType = type;
+            if(el) {
+                document.querySelectorAll('.master-tab').forEach(t => t.classList.remove('active'));
+                el.classList.add('active');
+            }
             const res = await fetch(`api/${type}.php`);
             const { success, data } = await res.json();
             const head = document.getElementById('master-thead');
             const body = document.getElementById('master-list');
             body.innerHTML = '';
             if(type === 'categories') {
-                head.innerHTML = '<tr><th>Category</th><th>Details</th><th>Actions</th></tr>';
+                head.innerHTML = '<tr><th data-translate="inventory.category">Category</th><th data-translate="inventory.description">Details</th><th data-translate="inventory.actions">Actions</th></tr>';
                 data.forEach(c => { body.innerHTML += `<tr><td><strong>${c.name}</strong></td><td>${c.description || '-'}</td><td><button class="action-btn"><i class="fas fa-edit"></i></button></td></tr>`; });
             } else if(type === 'brands') {
-                head.innerHTML = '<tr><th>Brand</th><th>Contact</th><th>Actions</th></tr>';
+                head.innerHTML = '<tr><th data-translate="inventory.brand">Brand</th><th>Contact</th><th data-translate="inventory.actions">Actions</th></tr>';
                 data.forEach(b => { body.innerHTML += `<tr><td><strong>${b.name}</strong></td><td>${b.contact_info || '-'}</td><td><button class="action-btn"><i class="fas fa-edit"></i></button></td></tr>`; });
             } else if(type === 'suppliers') {
-                head.innerHTML = '<tr><th>Supplier</th><th>Person</th><th>Contact</th><th>Actions</th></tr>';
+                head.innerHTML = '<tr><th data-translate="inventory.supplier">Supplier</th><th>Person</th><th>Contact</th><th data-translate="inventory.actions">Actions</th></tr>';
                 data.forEach(s => { body.innerHTML += `<tr><td><strong>${s.name}</strong></td><td>${s.contact_person || '-'}</td><td>${s.phone || '-'}</td><td><button class="action-btn"><i class="fas fa-edit"></i></button></td></tr>`; });
             }
+            langManager.applyLanguage(langManager.getCurrentLanguage());
         }
 
         // BI Charts
-        let mainChart = null, pieChart = null;
+        let mainChart = null, pieChart = null, branchRevChart = null, topProductsChart = null;
         async function renderCharts() {
             const res = await fetch('api/owner_analytics.php');
             const { success, data } = await res.json();
             if(!success) return;
-            if(mainChart) mainChart.destroy();
-            if(pieChart) pieChart.destroy();
+            
+            const ctxMain = document.getElementById('mainChart');
+            if(ctxMain) {
+                if(mainChart) mainChart.destroy();
+                mainChart = new Chart(ctxMain.getContext('2d'), {
+                    type: 'line',
+                    data: {
+                        labels: data.monthly_trend.map(t => t.month),
+                        datasets: [{
+                            label: 'Gross Revenue',
+                            data: data.monthly_trend.map(t => t.revenue),
+                            borderColor: '#3b82f6',
+                            borderWidth: 4,
+                            tension: 0.4,
+                            fill: true,
+                            backgroundColor: 'rgba(59, 130, 246, 0.05)'
+                        }]
+                    },
+                    options: { plugins: { legend: { display: false } }, responsive: true }
+                });
+            }
 
-            mainChart = new Chart(document.getElementById('mainChart').getContext('2d'), {
-                type: 'line',
-                data: {
-                    labels: data.monthly_trend.map(t => t.month),
-                    datasets: [{
-                        label: 'Gross Revenue',
-                        data: data.monthly_trend.map(t => t.revenue),
-                        borderColor: '#0056b3',
-                        borderWidth: 4,
-                        tension: 0.4,
-                        fill: true,
-                        backgroundColor: 'rgba(0, 86, 179, 0.05)'
-                    }]
-                },
-                options: { plugins: { legend: { display: false } }, responsive: true }
-            });
+            const ctxPie = document.getElementById('pieChart');
+            if(ctxPie) {
+                if(pieChart) pieChart.destroy();
+                pieChart = new Chart(ctxPie.getContext('2d'), {
+                    type: 'doughnut',
+                    data: {
+                        labels: data.sales_by_category.map(c => c.name),
+                        datasets: [{
+                            data: data.sales_by_category.map(c => c.count),
+                            backgroundColor: ['#3b82f6', '#2563eb', '#1d4ed8', '#1e40af', '#1e3a8a'],
+                            borderWidth: 0
+                        }]
+                    },
+                    options: { plugins: { legend: { position: 'bottom' } }, cutout: '75%' }
+                });
+            }
+        }
 
-            pieChart = new Chart(document.getElementById('pieChart').getContext('2d'), {
-                type: 'doughnut',
-                data: {
-                    labels: data.sales_by_category.map(c => c.name),
-                    datasets: [{
-                        data: data.sales_by_category.map(c => c.count),
-                        backgroundColor: ['#0056b3', '#2563eb', '#3b82f6', '#60a5fa', '#93c5fd'],
-                        borderWidth: 0
-                    }]
-                },
-                options: { plugins: { legend: { position: 'bottom' } }, cutout: '75%' }
-            });
+        async function renderAnalyticsCharts() {
+            const res = await fetch('api/owner_analytics.php');
+            const { success, data } = await res.json();
+            if(!success) return;
+
+            const ctxRev = document.getElementById('branchRevenueChart');
+            if(ctxRev) {
+                if(branchRevChart) branchRevChart.destroy();
+                branchRevChart = new Chart(ctxRev.getContext('2d'), {
+                    type: 'bar',
+                    data: {
+                        labels: data.revenue_by_branch.map(b => b.name),
+                        datasets: [{
+                            label: 'Revenue',
+                            data: data.revenue_by_branch.map(b => b.revenue),
+                            backgroundColor: '#3b82f6',
+                            borderRadius: 8
+                        }]
+                    },
+                    options: { plugins: { legend: { display: false } }, responsive: true }
+                });
+            }
+
+            const ctxTop = document.getElementById('topProductsChart');
+            if(ctxTop) {
+                if(topProductsChart) topProductsChart.destroy();
+                topProductsChart = new Chart(ctxTop.getContext('2d'), {
+                    type: 'bar',
+                    indexAxis: 'y',
+                    data: {
+                        labels: data.top_products.map(p => p.name),
+                        datasets: [{
+                            label: 'Units Sold',
+                            data: data.top_products.map(p => p.value),
+                            backgroundColor: '#10b981',
+                            borderRadius: 8
+                        }]
+                    },
+                    options: { plugins: { legend: { display: false } }, responsive: true }
+                });
+            }
         }
 
         // Init
@@ -623,7 +856,6 @@ $company_name = $settings['company_name'] ?? 'IBS Store';
             updateUIByLanguage(lang);
             langManager.applyLanguage(lang);
             loadStats();
-            loadBranches();
         });
     </script>
 </body>

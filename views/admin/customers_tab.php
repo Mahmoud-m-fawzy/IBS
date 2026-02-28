@@ -11,9 +11,14 @@
             <span style="background: #e2e8f0; padding: 10px; border-radius: 10px;">👥</span>
             <span data-translate="customers.title">Customer Management</span>
         </h2>
-        <button onclick="toggleAddCustomerPanel()" class="cust-btn-primary" id="addCustomerToggleBtn">
-            ➕ <span data-translate="customers.addCustomer">Add Customer</span>
-        </button>
+        <div style="display: flex; gap: 10px;">
+            <button onclick="openBulkCustomerSmsModal()" class="cust-btn-primary" style="background: #6366f1;">
+                💬 <span data-translate="customers.sendMessage">Send Message to All</span>
+            </button>
+            <button onclick="toggleAddCustomerPanel()" class="cust-btn-primary" id="addCustomerToggleBtn">
+                ➕ <span data-translate="customers.addCustomer">Add Customer</span>
+            </button>
+        </div>
     </div>
 
     <!-- PART 1: Stat Cards -->
@@ -149,6 +154,33 @@
                 <div style="font-size: 48px; margin-bottom: 15px;">🔍</div>
                 <p data-translate="customers.noCustomersFound" style="font-size: 18px; font-weight: 600; color: #64748b;">No customers found</p>
             </div>
+        </div>
+    </div>
+</div>
+
+<!-- Bulk SMS Modal -->
+<div id="bulkCustomerSmsModal" style="display: none; position: fixed; z-index: 1050; left: 0; top: 0; width: 100%; height: 100%; background: rgba(15,23,42,0.6); backdrop-filter: blur(6px);">
+    <div style="background: white; margin: 5% auto; border-radius: 16px; width: 90%; max-width: 500px; box-shadow: 0 25px 60px rgba(0,0,0,0.15); overflow: hidden; animation: custModalIn 0.3s cubic-bezier(0.4,0,0.2,1);">
+        <div style="background: linear-gradient(135deg, #4f46e5 0%, #3730a3 100%); color: white; padding: 24px 28px; display: flex; justify-content: space-between; align-items: center;">
+            <h3 style="margin: 0; font-size: 20px; font-weight: 700; display: flex; align-items: center; gap: 10px;">
+                💬 <span data-translate="customers.sendMessage">Send Message to All Customers</span>
+            </h3>
+            <span onclick="closeBulkCustomerSmsModal()" style="color: white; font-size: 26px; line-height: 1; cursor: pointer; opacity: 0.7; transition: opacity 0.2s;" onmouseover="this.style.opacity=1" onmouseout="this.style.opacity=0.7">&times;</span>
+        </div>
+        <div style="padding: 28px;">
+            <form id="bulkCustomerSmsForm" onsubmit="sendBulkCustomerSms(event)">
+                <div class="prof-input-group" style="margin-bottom: 20px;">
+                    <label data-translate="customers.sendMessage">Message</label>
+                    <textarea id="bulkCustomerSmsMessage" required rows="5" placeholder="Write your message for all customers..." style="width: 100%; padding: 12px; border: 1px solid #e2e8f0; border-radius: 8px; resize: vertical; font-family: inherit; font-size: 14px;" data-translate-placeholder="customers.writeMessage"></textarea>
+                    <small style="color: #64748b; margin-top: 8px; display: block;">This message will be sent via Twilio WhatsApp to all customers with saved phone numbers.</small>
+                </div>
+                <div style="display: flex; gap: 12px; justify-content: flex-end; padding-top: 18px; border-top: 1px solid #f1f5f9;">
+                    <button type="button" onclick="closeBulkCustomerSmsModal()" style="background: #f1f5f9; color: #64748b; padding: 12px 24px; border-radius: 8px; font-weight: 700; font-size: 14px; border: 1px solid #e2e8f0; cursor: pointer;" data-translate="common.cancel">Cancel</button>
+                    <button type="submit" id="btnSendBulkCustomerSms" class="cust-btn-primary" style="background: #4f46e5;">
+                        <span data-translate="customers.sendSms">🚀 Send via Twilio</span>
+                    </button>
+                </div>
+            </form>
         </div>
     </div>
 </div>
@@ -585,9 +617,71 @@ function escHtml(str) {
     return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
 
-// Close edit modal on outside click
+// Close modals on outside click
 window.addEventListener('click', function(e) {
-    const modal = document.getElementById('editCustomerModal');
-    if (e.target === modal) closeEditCustomerModal();
+    const editModal = document.getElementById('editCustomerModal');
+    if (e.target === editModal) closeEditCustomerModal();
+    
+    const bulkSmsModal = document.getElementById('bulkCustomerSmsModal');
+    if (e.target === bulkSmsModal) closeBulkCustomerSmsModal();
 });
+
+/* ---------- bulk sms ---------- */
+function openBulkCustomerSmsModal() {
+    document.getElementById('bulkCustomerSmsModal').style.display = 'block';
+    setTimeout(() => {
+        document.getElementById('bulkCustomerSmsMessage').focus();
+    }, 100);
+}
+
+function closeBulkCustomerSmsModal() {
+    document.getElementById('bulkCustomerSmsModal').style.display = 'none';
+    document.getElementById('bulkCustomerSmsForm').reset();
+}
+
+function sendBulkCustomerSms(event) {
+    event.preventDefault();
+    const btn = document.getElementById('btnSendBulkCustomerSms');
+    const message = document.getElementById('bulkCustomerSmsMessage').value.trim();
+    
+    if (!message) {
+        custShowToast('Please write a message first.', 'warning');
+        return;
+    }
+    
+    if (!confirm('Are you sure you want to send this message to all customers with saved phone numbers?')) {
+        return;
+    }
+    
+    const originalText = btn.innerHTML;
+    btn.innerHTML = '⏳ Sending...';
+    btn.disabled = true;
+    
+    fetch('api/send_customer_sms.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message: message })
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.success) {
+            custShowToast(data.message || 'Messages sent successfully! 🎉', 'success', 5000);
+            closeBulkCustomerSmsModal();
+        } else {
+            custShowToast(data.message || 'Error sending messages.', 'error', 6000);
+            if (data.stats && data.stats.success > 0) {
+                // Partial success
+                setTimeout(() => closeBulkCustomerSmsModal(), 2000);
+            }
+        }
+    })
+    .catch(err => {
+        console.error('Bulk SMS error:', err);
+        custShowToast('Network error while sending messages.', 'error');
+    })
+    .finally(() => {
+        btn.innerHTML = originalText;
+        btn.disabled = false;
+    });
+}
 </script>

@@ -1,8 +1,17 @@
 <?php
 session_start();
-if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'admin') {
+if (!isset($_SESSION['user_id']) || !in_array($_SESSION['role'], ['admin', 'owner'])) {
     header('Location: index.php');
     exit;
+}
+
+// Handle branch context for Owner
+if ($_SESSION['role'] === 'owner' && isset($_GET['branch_id'])) {
+    $_SESSION['branch_id'] = $_GET['branch_id'];
+    // Optional: Fetch branch name for display
+} elseif ($_SESSION['role'] === 'admin' && !isset($_SESSION['branch_id'])) {
+    // Admins must have a branch, usually set at login
+    // If missing, we might need a default or error
 }
 
 include_once 'config/database.php';
@@ -221,29 +230,28 @@ if ($_POST) {
     <div class="header">
         <div style="display: flex; align-items: center; gap: 15px;">
             <img src="components/css/logo.jpeg" alt="IBS Store Logo" style="width: 40px; height: auto; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.2);" />
-            <h1 data-translate="navigation.dashboard">🛠️ IBS Admin Dashboard</h1>
+            <h1>🛠️ <span data-translate="navigation.dashboard">IBS Admin Dashboard</span></h1>
         </div>
         <div>
             <span data-translate="navigation.welcome">Welcome</span>, <?php echo $_SESSION['name']; ?>
-            <a href="?logout=1" 
+            <a href="logout.php" 
                style="color: white; margin-left: 15px; text-decoration: none; padding: 8px 15px; border-radius: 6px; transition: all 0.3s; display: inline-block; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); font-weight: 500; position: relative; z-index: 1000;" 
-               data-translate="navigation.logout" 
                onmouseover="this.style.background='rgba(255,255,255,0.2)'; this.style.transform='translateY(-2px)';" 
                onmouseout="this.style.background='rgba(255,255,255,0.1)'; this.style.transform='translateY(0)';">
-                🚪 Logout
+                🚪 <span data-translate="navigation.logout">Logout</span>
             </a>
         </div>
     </div>
 
     <div class="nav-tabs">
-        <button class="nav-tab active" onclick="console.log('Receipt tab clicked'); showTab('receipt')" data-translate="sales.receipt">🧾 Receipt</button>
-        <button class="nav-tab" onclick="console.log('Products tab clicked'); showTab('products')" data-translate="inventory.addProduct">📦 Add Product</button>
-        <button class="nav-tab" onclick="console.log('Inventory tab clicked'); showTab('inventory')" data-translate="navigation.inventory">📋 Inventory</button>
-        <button class="nav-tab" onclick="console.log('Sales tab clicked'); showTab('sales')" data-translate="navigation.sales">💰 Sales</button>
-        <button class="nav-tab" onclick="console.log('Customers tab clicked'); showTab('customers')" data-translate="navigation.customers">👥 CUSTOMERS</button>
-        <button class="nav-tab" onclick="console.log('Staff tab clicked'); showTab('staff')" data-translate="navigation.staff">👥 Staff</button>
-        <button class="nav-tab" onclick="console.log('Financial tab clicked'); showTab('financial'); loadIncome(); loadPayment();" data-translate="navigation.financial">💰 Financial</button>
-        <button class="nav-tab" onclick="console.log('Reports tab clicked'); showTab('reports')" data-translate="navigation.reports">📊 Reports</button>
+        <button class="nav-tab active" onclick="console.log('Receipt tab clicked'); showTab('receipt')">🧾 <span data-translate="sales.receipt">Receipt</span></button>
+        <button class="nav-tab" onclick="console.log('Products tab clicked'); showTab('products')">📦 <span data-translate="inventory.addProduct">Add Product</span></button>
+        <button class="nav-tab" onclick="console.log('Inventory tab clicked'); showTab('inventory')">📋 <span data-translate="navigation.inventory">Inventory</span></button>
+        <button class="nav-tab" onclick="console.log('Sales tab clicked'); showTab('sales')">💰 <span data-translate="navigation.sales">Sales</span></button>
+        <button class="nav-tab" onclick="console.log('Customers tab clicked'); showTab('customers')">👥 <span data-translate="navigation.customers">CUSTOMERS</span></button>
+        <button class="nav-tab" onclick="console.log('Staff tab clicked'); showTab('staff')">👥 <span data-translate="navigation.staff">Staff</span></button>
+        <button class="nav-tab" onclick="console.log('Financial tab clicked'); showTab('financial'); loadIncome(); loadPayment();">💰 <span data-translate="navigation.financial">Financial</span></button>
+        <button class="nav-tab" onclick="console.log('Reports tab clicked'); showTab('reports')">📊 <span data-translate="navigation.reports">Reports</span></button>
     </div>
 
     <div class="content">
@@ -1249,23 +1257,44 @@ if ($_POST) {
                 addPaymentForm.addEventListener('submit', async function (e) {
                     e.preventDefault();
 
+                    const typeSelect = document.getElementById('expense-type');
+                    const expenseType = typeSelect ? typeSelect.value : 'general';
                     const price = parseFloat(document.getElementById('payment-price').value);
                     const description = document.getElementById('payment-description').value.trim();
 
+                    const productIdInput = document.getElementById('damage-product-id');
+                    const productId = productIdInput ? parseInt(productIdInput.value) : 0;
+                    const quantityInput = document.getElementById('damage-quantity');
+                    const quantity = quantityInput ? parseInt(quantityInput.value) : 1;
+
                     // Validate input
-                    if (price <= 0) {
-                        alert('Amount must be greater than 0');
-                        return;
+                    if (expenseType === 'damage') {
+                        if (!productId) {
+                            alert('Please select a product for damage expense');
+                            return;
+                        }
+                        if (quantity <= 0) {
+                            alert('Quantity must be greater than 0');
+                            return;
+                        }
+                    } else {
+                        if (price <= 0 || isNaN(price)) {
+                            alert('Amount must be greater than 0');
+                            return;
+                        }
+                        if (!description) {
+                            alert('Description is required');
+                            return;
+                        }
                     }
 
-                    if (!description) {
-                        alert('Description is required');
-                        return;
-                    }
-
+                    // For damage, the server will calculate the total cost based on purchase price
                     const paymentData = {
                         price: price,
-                        description: description
+                        description: description,
+                        expense_type: expenseType,
+                        product_id: productId,
+                        quantity: quantity
                     };
 
                     try {
@@ -1282,8 +1311,16 @@ if ($_POST) {
                         if (result.success) {
                             alert('Payment entry added successfully!');
                             addPaymentForm.reset();
+                            if (typeof toggleDamageFields === 'function') {
+                                const typeSel = document.getElementById('expense-type');
+                                if(typeSel) typeSel.value = 'general';
+                                toggleDamageFields();
+                            }
                             loadPayment(); // Refresh the payment list
                             loadReports(); // Refresh profit calculations
+                            if (expenseType === 'damage') {
+                                loadInventory(); // Refresh inventory
+                            }
                         } else {
                             alert('Failed to add payment entry: ' + (result.message || 'Unknown error'));
                         }
@@ -1294,6 +1331,162 @@ if ($_POST) {
                 });
             }
         });
+
+        // --- Product Damage Functions ---
+        function toggleDamageFields() {
+            const typeSelect = document.getElementById('expense-type');
+            if(!typeSelect) return;
+            const type = typeSelect.value;
+            const damageFields = document.getElementById('damage-fields');
+            const generalFields = document.getElementById('general-expense-fields');
+            const damageSubmitWrapper = document.getElementById('damage-submit-wrapper');
+            const priceInput = document.getElementById('payment-price');
+            const descInput = document.getElementById('payment-description');
+            
+            if (type === 'damage') {
+                if(damageFields) damageFields.style.display = 'grid';
+                if(damageSubmitWrapper) damageSubmitWrapper.style.display = 'flex';
+                if(generalFields) generalFields.style.display = 'none';
+                
+                if(priceInput) priceInput.required = false;
+                if(descInput) descInput.required = false;
+
+                // Reset fields
+                const searchInput = document.getElementById('damage-product-search');
+                if(searchInput) searchInput.value = '';
+                const idInput = document.getElementById('damage-product-id');
+                if(idInput) idInput.value = '';
+                const pPriceInput = document.getElementById('damage-product-price');
+                if(pPriceInput) pPriceInput.value = '';
+                const qInput = document.getElementById('damage-quantity');
+                if(qInput) qInput.value = '1';
+                setupDamageSearch();
+            } else {
+                if(damageFields) damageFields.style.display = 'none';
+                if(damageSubmitWrapper) damageSubmitWrapper.style.display = 'none';
+                if(generalFields) generalFields.style.display = 'grid';
+
+                if(priceInput) {
+                    priceInput.required = true;
+                    priceInput.value = '';
+                }
+                if(descInput) {
+                    descInput.required = true;
+                    descInput.value = '';
+                }
+            }
+        }
+
+        let damageProductsCache = null;
+
+        async function setupDamageSearch() {
+            const input = document.getElementById('damage-product-search');
+            const resultsDiv = document.getElementById('damage-product-results');
+            
+            if (!input || !resultsDiv) return;
+
+            // Load products cache if not loaded
+            if (!damageProductsCache) {
+                try {
+                    const response = await fetch('api/products.php');
+                    const result = await response.json();
+                    if (result.success) {
+                        damageProductsCache = result.data;
+                    } else {
+                        damageProductsCache = [];
+                    }
+                } catch (e) {
+                    console.error('Failed to load products for damage search:', e);
+                    damageProductsCache = [];
+                }
+            }
+
+            // Remove old listeners to prevent duplicates
+            const newInput = input.cloneNode(true);
+            input.parentNode.replaceChild(newInput, input);
+            
+            newInput.addEventListener('input', function() {
+                const query = this.value.toLowerCase();
+                resultsDiv.innerHTML = '';
+                
+                if (query.length < 2) {
+                    resultsDiv.style.display = 'none';
+                    return;
+                }
+                
+                // Filter products from cached array
+                const matches = (damageProductsCache || []).filter(p => {
+                    const searchStr = `${p.brand} ${p.model} ${p.code || ''} ${p.barcode || ''}`.toLowerCase();
+                    return searchStr.includes(query) && parseInt(p.available_stock) > 0; // Only show products in stock
+                }).slice(0, 10); // Limit to 10 results
+                
+                if (matches.length > 0) {
+                    matches.forEach(product => {
+                        const div = document.createElement('div');
+                        div.className = 'damage-search-item';
+                        div.innerHTML = `
+                            <div style="font-weight: bold;">${product.brand} ${product.model}</div>
+                            <div style="font-size: 11px; color: #64748b;">Stock: ${product.available_stock} | Purchase Price: ${product.purchase_price} EGP</div>
+                        `;
+                        div.onclick = function() {
+                            selectDamageProduct(product);
+                            resultsDiv.style.display = 'none';
+                        };
+                        resultsDiv.appendChild(div);
+                    });
+                    resultsDiv.style.display = 'block';
+                } else {
+                    resultsDiv.style.display = 'none';
+                }
+            });
+
+            // Close results on outside click
+            document.addEventListener('click', function(e) {
+                if (e.target !== newInput && e.target !== resultsDiv && !resultsDiv.contains(e.target)) {
+                    resultsDiv.style.display = 'none';
+                }
+            });
+        }
+
+        function selectDamageProduct(product) {
+            const searchInput = document.getElementById('damage-product-search');
+            if(searchInput) searchInput.value = `${product.brand} ${product.model}`;
+            const idInput = document.getElementById('damage-product-id');
+            if(idInput) idInput.value = product.id;
+            const priceInput = document.getElementById('damage-product-price');
+            if(priceInput) priceInput.value = product.purchase_price;
+            
+            const maxStock = parseInt(product.available_stock);
+            const qtyInput = document.getElementById('damage-quantity');
+            if(qtyInput) {
+                qtyInput.max = maxStock;
+                if (parseInt(qtyInput.value) > maxStock) qtyInput.value = maxStock;
+            }
+            
+            calculateDamageTotal();
+        }
+
+        function calculateDamageTotal() {
+            const priceInput = document.getElementById('damage-product-price');
+            const price = parseFloat(priceInput ? priceInput.value || 0 : 0);
+            const qtyInput = document.getElementById('damage-quantity');
+            const qtyStr = qtyInput ? qtyInput.value : '1';
+            const qty = parseInt(qtyStr || 1);
+            const searchInput = document.getElementById('damage-product-search');
+            const productName = searchInput ? searchInput.value : 'Unknown Product';
+            
+            const pPriceInput = document.getElementById('payment-price');
+            const pDescInput = document.getElementById('payment-description');
+            
+            if (price > 0 && qty > 0) {
+                const total = price * qty;
+                if(pPriceInput) pPriceInput.value = total.toFixed(2);
+                if(pDescInput) pDescInput.value = `Product Damage: ${productName} (Qty: ${qty})`;
+            } else {
+                if(pPriceInput) pPriceInput.value = '';
+                if(pDescInput) pDescInput.value = '';
+            }
+        }
 
         async function loadProducts() {
             try {
@@ -1306,6 +1499,72 @@ if ($_POST) {
                 }
             } catch (error) {
                 console.error('Error loading products:', error);
+            }
+        }
+
+
+
+        // ─────────────────────────────────────────────────────
+        // Sales Tab: Load and display statistics cards
+        // ─────────────────────────────────────────────────────
+        async function loadSalesStats() {
+            try {
+                const today = new Date().toISOString().slice(0, 10);
+                const monthStart = today.slice(0, 7) + '-01';
+                const monthEnd   = today;
+
+                // Fetch today's stats
+                const [todayRes, monthRes] = await Promise.all([
+                    fetch(`api/sales.php?stats&date_from=${today}&date_to=${today}`),
+                    fetch(`api/sales.php?stats&date_from=${monthStart}&date_to=${monthEnd}`)
+                ]);
+
+                const todayData  = await todayRes.json();
+                const monthData  = await monthRes.json();
+
+                // Also fetch full sales list for returned items count
+                const allRes    = await fetch('api/sales.php');
+                const allData   = await allRes.json();
+
+                // Populate today cards
+                if (todayData.success) {
+                    const t = todayData.data;
+                    const el = (id) => document.getElementById(id);
+                    if (el('stat-sales-today'))   el('stat-sales-today').textContent   = t.total_transactions;
+                    if (el('stat-revenue-today'))  el('stat-revenue-today').innerHTML   = `${formatCurrency(t.total_revenue)} <small style="font-size:14px;">EGP</small>`;
+                }
+
+                // Populate month cards
+                if (monthData.success) {
+                    const m = monthData.data;
+                    const el = (id) => document.getElementById(id);
+                    if (el('stat-sales-month'))        el('stat-sales-month').textContent = m.total_transactions;
+                    if (el('stat-revenue-month-mini')) el('stat-revenue-month-mini').innerHTML = `${formatCurrency(m.total_revenue)} <small style="font-size:14px;">EGP</small>`;
+                    if (el('stat-revenue-month-total')) el('stat-revenue-month-total').innerHTML = `${formatCurrency(m.total_revenue)} <small style="font-size:16px;">EGP</small>`;
+
+                    // Payment method breakdown
+                    const pb = m.payment_breakdown || {};
+                    if (el('stat-pay-cash'))        el('stat-pay-cash').textContent       = `${formatCurrency(pb.Cash || 0)} EGP`;
+                    if (el('stat-pay-visa'))        el('stat-pay-visa').textContent       = `${formatCurrency(pb.Visa || 0)} EGP`;
+                    if (el('stat-pay-instapay'))    el('stat-pay-instapay').textContent   = `${formatCurrency(pb.Instapay || 0)} EGP`;
+                    if (el('stat-pay-installment')) el('stat-pay-installment').textContent = `${formatCurrency(pb.Installment || 0)} EGP`;
+                }
+
+                // Sold units & returned items from the full sales list
+                if (allData.success) {
+                    const sales = allData.data || [];
+                    let totalItems = 0, totalReturned = 0;
+                    sales.forEach(s => {
+                        totalItems    += (s.item_count || 0);
+                        totalReturned += (s.returned_units || 0);
+                    });
+                    const el = (id) => document.getElementById(id);
+                    if (el('stat-total-items')) el('stat-total-items').textContent = totalItems - totalReturned;
+                    if (el('stat-returns'))     el('stat-returns').textContent     = totalReturned;
+                }
+
+            } catch (error) {
+                console.error('Error loading sales stats:', error);
             }
         }
 
@@ -2890,34 +3149,61 @@ function startBarcodeScan() {
 
         async function loadSalesStats() {
             try {
-                const response = await fetch('api/sales.php?stats=true');
-                const result = await response.json();
-                
-                if (result.success) {
-                    const stats = result.data;
-                    document.getElementById('stat-sales-today').textContent = stats.sales_today.toLocaleString();
-                    document.getElementById('stat-revenue-today').innerHTML = stats.revenue_today.toLocaleString() + ' <small>EGP</small>';
-                    document.getElementById('stat-sales-month').textContent = stats.sales_month.toLocaleString();
-                    
-                    // Unified monthly revenue IDs
-                    const revMonthTotal = document.getElementById('stat-revenue-month-total');
-                    const revMonthMini = document.getElementById('stat-revenue-month-mini');
-                    const formattedRevenue = stats.revenue_month.toLocaleString() + ' <small>EGP</small>';
-                    
-                    if (revMonthTotal) revMonthTotal.innerHTML = formattedRevenue;
-                    if (revMonthMini) revMonthMini.innerHTML = formattedRevenue;
+                const today = new Date().toISOString().slice(0, 10);
+                const monthStart = today.slice(0, 7) + '-01';
 
-                    document.getElementById('stat-total-items').textContent = stats.total_units.toLocaleString();
-                    document.getElementById('stat-returns').textContent = stats.returned_items.toLocaleString();
-                    
-                    // Payment breakdown
-                    if (stats.payment_breakdown) {
-                        document.getElementById('stat-pay-cash').textContent = stats.payment_breakdown.Cash.toLocaleString() + ' EGP';
-                        document.getElementById('stat-pay-visa').textContent = stats.payment_breakdown.Visa.toLocaleString() + ' EGP';
-                        document.getElementById('stat-pay-instapay').textContent = stats.payment_breakdown.Instapay.toLocaleString() + ' EGP';
-                        document.getElementById('stat-pay-installment').textContent = stats.payment_breakdown.Installment.toLocaleString() + ' EGP';
-                    }
+                // Parallel fetch: today stats + month stats
+                const [todayRes, monthRes] = await Promise.all([
+                    fetch(`api/sales.php?stats&date_from=${today}&date_to=${today}`),
+                    fetch(`api/sales.php?stats&date_from=${monthStart}&date_to=${today}`)
+                ]);
+
+                const todayData = await todayRes.json();
+                const monthData = await monthRes.json();
+
+                // Fetch all sales for sold units + returned items totals
+                const allRes  = await fetch('api/sales.php');
+                const allData = await allRes.json();
+
+                // ── Today cards ──
+                if (todayData.success) {
+                    const t = todayData.data;
+                    const el = id => document.getElementById(id);
+                    if (el('stat-sales-today'))  el('stat-sales-today').textContent  = (t.total_transactions || 0).toLocaleString();
+                    if (el('stat-revenue-today')) el('stat-revenue-today').innerHTML = (t.total_revenue || 0).toLocaleString() + ' <small>EGP</small>';
                 }
+
+                // ── Month cards ──
+                if (monthData.success) {
+                    const m  = monthData.data;
+                    const el = id => document.getElementById(id);
+                    const fmtRev = (m.total_revenue || 0).toLocaleString() + ' <small>EGP</small>';
+
+                    if (el('stat-sales-month'))         el('stat-sales-month').textContent        = (m.total_transactions || 0).toLocaleString();
+                    if (el('stat-revenue-month-total')) el('stat-revenue-month-total').innerHTML  = fmtRev;
+                    if (el('stat-revenue-month-mini'))  el('stat-revenue-month-mini').innerHTML   = fmtRev;
+
+                    // Payment method breakdown
+                    const pb = m.payment_breakdown || {};
+                    if (el('stat-pay-cash'))        el('stat-pay-cash').textContent        = (pb.Cash || 0).toLocaleString()        + ' EGP';
+                    if (el('stat-pay-visa'))        el('stat-pay-visa').textContent        = (pb.Visa || 0).toLocaleString()        + ' EGP';
+                    if (el('stat-pay-instapay'))    el('stat-pay-instapay').textContent    = (pb.Instapay || 0).toLocaleString()    + ' EGP';
+                    if (el('stat-pay-installment')) el('stat-pay-installment').textContent = (pb.Installment || 0).toLocaleString() + ' EGP';
+                }
+
+                // ── Sold units / returned items from full sales list ──
+                if (allData.success) {
+                    const sales = allData.data || [];
+                    let totalItems = 0, totalReturned = 0;
+                    sales.forEach(s => {
+                        totalItems    += (s.item_count     || 0);
+                        totalReturned += (s.returned_units || 0);
+                    });
+                    const el = id => document.getElementById(id);
+                    if (el('stat-total-items')) el('stat-total-items').textContent = (totalItems - totalReturned).toLocaleString();
+                    if (el('stat-returns'))     el('stat-returns').textContent     = totalReturned.toLocaleString();
+                }
+
             } catch (error) {
                 console.error('Error loading sales stats:', error);
             }

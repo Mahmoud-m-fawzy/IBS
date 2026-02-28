@@ -41,17 +41,17 @@ if (isset($_GET['logout'])) {
     <div class="header">
         <div style="display: flex; align-items: center; gap: 15px;">
             <img src="components/css/logo.jpeg" alt="IBS Store Logo" style="width: 40px; height: auto; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.2);" />
-            <h1 data-translate="navigation.dashboard">📱 IBS Staff Dashboard</h1>
+            <h1>📱 <span data-translate="navigation.dashboard">IBS Staff Dashboard</span></h1>
         </div>
         <div class="user-info">
             <span data-translate="navigation.welcome">Welcome</span>,<?php echo $_SESSION['name']; ?>
-            <a href="?logout=1" class="logout-btn" data-translate="navigation.logout">Logout</a>
+            <a href="logout.php" class="logout-btn">🚪 <span data-translate="navigation.logout">Logout</span></a>
         </div>
     </div>
 
     <div class="nav-tabs">
-        <button class="nav-tab active" onclick="showTab('receipt')" data-translate="sales.receipt">🧾 Receipt</button>
-        <button class="nav-tab" onclick="showTab('inventory')" data-translate="navigation.inventory">📦 Inventory</button>
+        <button class="nav-tab active" onclick="showTab('receipt')">🧾 <span data-translate="sales.receipt">Receipt</span></button>
+        <button class="nav-tab" onclick="showTab('inventory')">📦 <span data-translate="navigation.inventory">Inventory</span></button>
     </div>
 
     <div class="content">

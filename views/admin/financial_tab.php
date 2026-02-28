@@ -87,7 +87,7 @@
         border-radius: 16px;
         box-shadow: var(--fin-shadow);
         border: 1px solid var(--fin-border);
-        overflow: hidden;
+        overflow: visible; /* Changed from hidden to allow autocomplete dropdowns to show */
         display: flex;
         flex-direction: column;
     }
@@ -146,6 +146,8 @@
         font-size: 14px;
         transition: border-color 0.2s;
         outline: none;
+        box-sizing: border-box;
+        width: 100%;
     }
 
     .fin-input:focus { border-color: var(--inv-primary, #3b82f6); }
@@ -221,9 +223,39 @@
     .fin-action-btn.print:hover { color: #3b82f6; border-color: #3b82f6; }
     .fin-action-btn.delete:hover { color: #ef4444; border-color: #ef4444; }
 
+    /* Search Results */
+    .damage-search-item {
+        padding: 10px;
+        cursor: pointer;
+        border-bottom: 1px solid #f1f5f9;
+        font-size: 13px;
+        color: #1e293b;
+    }
+    .damage-search-item:hover {
+        background: #f8fafc;
+    }
+    .damage-search-item:last-child {
+        border-bottom: none;
+    }
+
     /* RTL */
     body.rtl .fin-panel-header { border-left: none; }
     body.rtl .fin-table th, body.rtl .fin-table td { text-align: right; }
+
+    /* Responsive Design to Prevent Horizontal Scroll */
+    @media (max-width: 1200px) {
+        .fin-panels-grid {
+            grid-template-columns: 1fr; /* Stack the two main panels */
+        }
+    }
+    @media (max-width: 768px) {
+        .fin-stats-grid {
+            grid-template-columns: 1fr 1fr; /* 2x2 grid for stats */
+        }
+        .fin-form-grid, #damage-fields {
+            grid-template-columns: 1fr !important; /* Stack inputs inside forms */
+        }
+    }
 </style>
 
 <div id="financial" class="tab-content" style="display: none;">
@@ -264,13 +296,36 @@
             <!-- Expense Panel (الهالك او المصروفات) -->
             <div class="fin-panel">
                 <div class="fin-panel-header expense">
-                    <h3 class="fin-panel-title" data-translate="payment.title">
-                        <span>🔴</span> المصروفات التشغيلية
+                    <h3 class="fin-panel-title">
+                        <span>🔴</span> <span data-translate="payment.title">المصروفات التشغيلية</span>
                     </h3>
                 </div>
 
                 <form id="addPaymentForm" class="fin-form">
-                    <div class="fin-form-grid">
+                    <div class="fin-input-group" style="margin-bottom: 12px;">
+                        <label data-translate="payment.expenseType">نوع المصروف / Expense Type</label>
+                        <select id="expense-type" class="fin-input" onchange="toggleDamageFields()">
+                            <option value="general" data-translate="payment.generalExpense">مصروف عام (General Expense)</option>
+                            <option value="damage" data-translate="payment.productDamage">هالك منتجات (Product Damage)</option>
+                        </select>
+                    </div>
+
+                    <!-- Product Damage Fields (Hidden by Default) -->
+                    <div id="damage-fields" style="display: none; grid-template-columns: 2fr 1fr; gap: 12px; margin-bottom: 12px;">
+                        <div class="fin-input-group" style="position: relative;">
+                            <label data-translate="payment.product">المنتج / Product</label>
+                            <input type="text" id="damage-product-search" class="fin-input" data-translate-placeholder="payment.searchProduct" placeholder="Search product..." autocomplete="off">
+                            <input type="hidden" id="damage-product-id">
+                            <input type="hidden" id="damage-product-price">
+                            <div id="damage-product-results" class="autocomplete-results" style="display: none; position: absolute; top: 100%; left: 0; right: 0; background: white; border: 1px solid var(--fin-border); border-radius: 8px; z-index: 1000; max-height: 200px; overflow-y: auto; box-shadow: var(--fin-shadow);"></div>
+                        </div>
+                        <div class="fin-input-group">
+                            <label data-translate="payment.quantity">الكمية / Quantity</label>
+                            <input type="number" id="damage-quantity" class="fin-input" min="1" value="1" oninput="calculateDamageTotal()">
+                        </div>
+                    </div>
+
+                    <div id="general-expense-fields" class="fin-form-grid">
                         <div class="fin-input-group">
                             <label data-translate="payment.amount">Amount</label>
                             <input type="number" id="payment-price" step="0.01" min="0.01" required 
@@ -281,7 +336,12 @@
                             <input type="text" id="payment-description" required 
                                    class="fin-input" placeholder="Enter expense details...">
                         </div>
-                        <button type="submit" class="fin-btn-submit expense">⚡ Add</button>
+                        <button type="submit" class="fin-btn-submit expense" style="grid-column: 3;">⚡ Add</button>
+                    </div>
+
+                    <!-- Add Button for Product Damage (Only visible when Product Damage is selected) -->
+                    <div id="damage-submit-wrapper" style="display: none; justify-content: flex-end;">
+                        <button type="submit" class="fin-btn-submit expense" style="width: auto; padding: 10px 30px;">⚡ <span data-translate="payment.addDamage">Add Damage</span></button>
                     </div>
                 </form>
 
@@ -304,8 +364,8 @@
             <!-- Revenue Panel (المدخلات واي ايراد داخل) -->
             <div class="fin-panel">
                 <div class="fin-panel-header revenue">
-                    <h3 class="fin-panel-title" data-translate="income.title">
-                        <span>🟢</span> الإيرادات التشغيلية
+                    <h3 class="fin-panel-title">
+                        <span>🟢</span> <span data-translate="income.title">الإيرادات التشغيلية</span>
                     </h3>
                 </div>
 
